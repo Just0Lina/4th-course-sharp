@@ -1,23 +1,16 @@
-using DreamTeamApp.Nsu.HackathonProblem.Models;
 using DreamTeamApp.Nsu.HackathonProblem.Services;
+using static Tests.Nsu.HackathonProblem.Core.CommonMethods;
 
-namespace Tests;
+namespace Tests.Nsu.HackathonProblem.Core;
 
 public class PreferencesTests
 {
     [Fact]
-    public void PreferencesList_Size_Should_Match_Number_Of_TeamLeads_And_Juniors()
+    public void
+        PreferencesList_Size_Should_Match_Number_Of_TeamLeads_And_Juniors()
     {
-        var teamLeads = new List<Employee>
-        {
-            new(1, "TeamLead1"),
-            new(2, "TeamLead2")
-        };
-        var juniors = new List<Employee>
-        {
-            new(1, "Junior1"),
-            new(2, "Junior2")
-        };
+        var teamLeads = GetDefaultJuniors();
+        var juniors = GetDefaultTeamLeads();
         var service = new PreferencesService();
 
         var wishlist = service.CreatePreferences(juniors, teamLeads);
@@ -28,16 +21,8 @@ public class PreferencesTests
     [Fact]
     public void Each_Junior_Should_Have_All_TeamLeads_In_Their_Preferences()
     {
-        var teamLeads = new List<Employee>
-        {
-            new(1, "TeamLead1"),
-            new(2, "TeamLead2")
-        };
-        var juniors = new List<Employee>
-        {
-            new(1, "Junior1"),
-            new(2, "Junior2")
-        };
+        var teamLeads = GetDefaultJuniors();
+        var juniors = GetDefaultTeamLeads();
         var service = new PreferencesService();
 
         var wishlist = service.CreatePreferences(juniors, teamLeads);

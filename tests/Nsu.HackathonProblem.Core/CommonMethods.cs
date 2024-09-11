@@ -3,9 +3,9 @@ using DreamTeamApp.Nsu.HackathonProblem.Models;
 using DreamTeamApp.Nsu.HackathonProblem.Services.Interfaces;
 using Moq;
 
-namespace Tests;
+namespace Tests.Nsu.HackathonProblem.Core;
 
-public class CommonMethods
+public static class CommonMethods
 {
     public static List<Employee> GetDefaultTeamLeads()
     {

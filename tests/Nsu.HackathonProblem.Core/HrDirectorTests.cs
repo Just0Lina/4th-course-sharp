@@ -4,7 +4,7 @@ using DreamTeamApp.Nsu.HackathonProblem.Services;
 using DreamTeamApp.Nsu.HackathonProblem.Services.Interfaces;
 using Moq;
 
-namespace Tests;
+namespace Tests.Nsu.HackathonProblem.Core;
 
 using static CommonMethods;
 
