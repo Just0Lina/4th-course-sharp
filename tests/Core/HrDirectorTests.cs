@@ -1,10 +1,10 @@
-using DreamTeamApp.Nsu.HackathonProblem.Core;
-using DreamTeamApp.Nsu.HackathonProblem.Models;
 using DreamTeamApp.Nsu.HackathonProblem.Services;
 using DreamTeamApp.Nsu.HackathonProblem.Services.Interfaces;
 using Moq;
+using Nsu.HackathonProblem.Core;
+using Nsu.HackathonProblem.Models;
 
-namespace Tests.Nsu.HackathonProblem.Core;
+namespace Nsu.HackathonProblem.Tests.Core;
 
 using static CommonMethods;
 

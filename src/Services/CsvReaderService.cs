@@ -1,4 +1,4 @@
-using DreamTeamApp.Nsu.HackathonProblem.Models;
+using Nsu.HackathonProblem.Models;
 
 namespace DreamTeamApp.Nsu.HackathonProblem.Services;
 

@@ -1,7 +1,6 @@
 using DreamTeamApp.Nsu.HackathonProblem.Services;
-using static Tests.Nsu.HackathonProblem.Core.CommonMethods;
 
-namespace Tests.Nsu.HackathonProblem.Core;
+namespace Nsu.HackathonProblem.Tests.Core;
 
 public class PreferencesTests
 {

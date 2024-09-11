@@ -1,9 +1,9 @@
-using DreamTeamApp.Nsu.HackathonProblem.Core;
-using DreamTeamApp.Nsu.HackathonProblem.Models;
 using DreamTeamApp.Nsu.HackathonProblem.Services;
 using Microsoft.Extensions.Hosting;
+using Nsu.HackathonProblem.Core;
+using Nsu.HackathonProblem.Models;
 
-namespace DreamTeamApp.Nsu.HackathonProblem.Workers
+namespace Nsu.HackathonProblem.Nsu.HackathonProblem.Workers
 {
     public class HackathonWorker(
         HrDirector hrDirector)

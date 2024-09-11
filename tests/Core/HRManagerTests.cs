@@ -1,9 +1,8 @@
-using DreamTeamApp.Nsu.HackathonProblem.Core;
-using DreamTeamApp.Nsu.HackathonProblem.Models;
 using Moq;
-using static Tests.Nsu.HackathonProblem.Core.CommonMethods;
+using Nsu.HackathonProblem.Core;
+using Nsu.HackathonProblem.Models;
 
-namespace Tests.Nsu.HackathonProblem.Core;
+namespace Nsu.HackathonProblem.Tests.Core;
 
 public class HrManagerTests
 {

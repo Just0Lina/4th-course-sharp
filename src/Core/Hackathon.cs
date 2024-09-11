@@ -1,7 +1,7 @@
-using DreamTeamApp.Nsu.HackathonProblem.Models;
 using DreamTeamApp.Nsu.HackathonProblem.Services.Interfaces;
+using Nsu.HackathonProblem.Models;
 
-namespace DreamTeamApp.Nsu.HackathonProblem.Core;
+namespace Nsu.HackathonProblem.Core;
 
 public class Hackathon(IPreferencesService preferencesService)
 {

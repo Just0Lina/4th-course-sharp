@@ -1,9 +1,9 @@
-﻿using DreamTeamApp.Nsu.HackathonProblem.Core;
-using DreamTeamApp.Nsu.HackathonProblem.Services;
+﻿using DreamTeamApp.Nsu.HackathonProblem.Services;
 using DreamTeamApp.Nsu.HackathonProblem.Services.Interfaces;
-using DreamTeamApp.Nsu.HackathonProblem.Workers;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Nsu.HackathonProblem.Core;
+using Nsu.HackathonProblem.Nsu.HackathonProblem.Workers;
 
 class Program02
 {

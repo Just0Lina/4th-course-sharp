@@ -1,5 +1,5 @@
 
-namespace DreamTeamApp.Nsu.HackathonProblem.Models
+namespace Nsu.HackathonProblem.Models
 {
     public class EmployeePreferences(
         Employee employee,

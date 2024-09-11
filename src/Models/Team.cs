@@ -1,4 +1,4 @@
-﻿namespace DreamTeamApp.Nsu.HackathonProblem.Models;
+﻿namespace Nsu.HackathonProblem.Models;
 
 public class Team(
     Employee teamLead,
