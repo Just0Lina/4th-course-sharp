@@ -1,22 +1,13 @@
+using Nsu.HackathonProblem.Contracts.Models;
 using Nsu.HackathonProblem.Contracts.Services;
-namespace Nsu.HackathonProblem.Core
+
+namespace Nsu.HackathonProblem.Core;
+
+public class Hackathon(IPreferencesService preferencesService)
 {
-    using Nsu.HackathonProblem.Contracts.Models;
-
-    public class Hackathon
+    public (List<EmployeePreferences>, List<EmployeePreferences>)
+        GeneratePreferences(List<Employee> juniors, List<Employee> teamLeads)
     {
-        private readonly IPreferencesService _preferencesService;
-
-        public Hackathon(IPreferencesService preferencesService)
-        {
-            _preferencesService = preferencesService;
-        }
-
-        public (List<JuniorPreferences>, List<TeamLeadPreferences>) GeneratePreferences(List<Employee> juniors, List<Employee> teamLeads)
-        {
-            var juniorPreferences = _preferencesService.CreateJuniorPreferences(juniors, teamLeads);
-            var teamLeadPreferences = _preferencesService.CreateTeamLeadPreferences(teamLeads, juniors);
-            return (juniorPreferences, teamLeadPreferences);
-        }
+        return preferencesService.GeneratePreferences(juniors, teamLeads);
     }
 }

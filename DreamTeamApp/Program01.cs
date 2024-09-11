@@ -27,8 +27,8 @@
 //         {
 //             Console.WriteLine($"--- Hackathon #{i} ---");
 
-//             var juniorPreferences = preferencesService.CreateJuniorPreferences(juniors, teamLeads);
-//             var teamLeadPreferences = preferencesService.CreateTeamLeadPreferences(teamLeads, juniors);
+//             var juniorPreferences = preferencesService.CreatePreferences(juniors, teamLeads);
+//             var teamLeadPreferences = preferencesService.CreatePreferences(teamLeads, juniors);
 
 //             var teams = teamFormationService.FormTeams(juniorPreferences, teamLeadPreferences);
 
@@ -45,13 +45,13 @@
 //     }
 
 
-//     static void DisplayPreferences(List<JuniorPreferences> juniorPreferences, List<TeamLeadPreferences> teamLeadPreferences)
+//     static void DisplayPreferences(List<EmployeePreferences> juniorPreferences, List<EmployeePreferences> teamLeadPreferences)
 //     {
 //         Console.WriteLine("Junior Preferences:");
 //         foreach (var jp in juniorPreferences)
 //         {
 //             Console.WriteLine($"{jp.Junior.Name}'s preferences:");
-//             foreach (var tl in jp.PreferredTeamLeads)
+//             foreach (var tl in jp.PreferredEmployees)
 //             {
 //                 Console.WriteLine($"- {tl.Key.Name} (Priority: {tl.Value})");
 //             }
@@ -62,7 +62,7 @@
 //         foreach (var tlp in teamLeadPreferences)
 //         {
 //             Console.WriteLine($"{tlp.TeamLead.Name}'s preferences:");
-//             foreach (var j in tlp.PreferredJuniors)
+//             foreach (var j in tlp.PreferredEmployees)
 //             {
 //                 Console.WriteLine($"- {j.Key.Name} (Priority: {j.Value})");
 //             }

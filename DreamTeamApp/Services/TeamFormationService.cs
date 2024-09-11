@@ -1,82 +1,63 @@
+using Nsu.HackathonProblem.Contracts.Models;
 
-namespace Nsu.HackathonProblem.Contracts.Services
+namespace Nsu.HackathonProblem.Contracts.Services;
+
+public class TeamFormationService : ITeamFormationService
 {
-    using System.Collections.Generic;
-    using System.Linq;
-    using Nsu.HackathonProblem.Contracts.Models;
-
-    public class TeamFormationService : ITeamFormationService
+    public List<Team> FormTeams(List<EmployeePreferences> juniorPreferences,
+        List<EmployeePreferences> teamLeadPreferences)
     {
-        private readonly RatingService _ratingService;
+        var freeJuniors =
+            new HashSet<EmployeePreferences>(juniorPreferences);
+        var teamLeadMatches = new Dictionary<Employee, Employee>();
+        var juniorProposals = juniorPreferences.ToDictionary(
+            jp => jp.Employee,
+            jp => new Queue<Employee>(jp.PreferredEmployees
+                .Keys)); // Очередь предпочтений для каждого джуна
 
-        public TeamFormationService()
+        while (freeJuniors.Count > 0)
         {
-            _ratingService = new RatingService();
-        }
+            var juniorPref = freeJuniors.First();
+            freeJuniors.Remove(juniorPref);
 
-        public double CalculateOverallHarmony(List<Team> teams)
-        {
-            return _ratingService.CalculateHarmonicMean(teams);
-        }
-        public List<Team> FormTeams(List<JuniorPreferences> juniorPreferences, List<TeamLeadPreferences> teamLeadPreferences)
-        {
-            var teams = new List<Team>();
+            if (juniorProposals[juniorPref.Employee].Count <= 0) continue;
+            var teamLead = juniorProposals[juniorPref.Employee].Dequeue();
 
-            var freeJuniors = new HashSet<JuniorPreferences>(juniorPreferences);
-            var teamLeadMatches = new Dictionary<Employee, Employee>();
-            var juniorProposals = juniorPreferences.ToDictionary(jp => jp.Junior, jp => new Queue<Employee>(jp.PreferredTeamLeads.Keys)); // Очередь предпочтений для каждого джуна
-
-            while (freeJuniors.Count > 0)
+            if (!teamLeadMatches.TryGetValue(teamLead, out var value))
             {
-                var juniorPref = freeJuniors.First();
-                freeJuniors.Remove(juniorPref);
+                teamLeadMatches[teamLead] = juniorPref.Employee;
+            }
+            else
+            {
+                var currentJunior = value;
+                var teamLeadPref =
+                    teamLeadPreferences.First(tlp =>
+                        tlp.Employee == teamLead);
 
-                if (juniorProposals[juniorPref.Junior].Count > 0)
+                if (teamLeadPref.PreferredEmployees[currentJunior] >
+                    teamLeadPref.PreferredEmployees[juniorPref.Employee])
                 {
-                    var teamLead = juniorProposals[juniorPref.Junior].Dequeue();
-
-                    if (!teamLeadMatches.ContainsKey(teamLead))
-                    {
-                        teamLeadMatches[teamLead] = juniorPref.Junior;
-                    }
-                    else
-                    {
-                        var currentJunior = teamLeadMatches[teamLead];
-                        var teamLeadPref = teamLeadPreferences.First(tlp => tlp.TeamLead == teamLead);
-
-                        if (teamLeadPref.PreferredJuniors[currentJunior] > teamLeadPref.PreferredJuniors[juniorPref.Junior])
-                        {
-                            freeJuniors.Add(juniorPref);
-                        }
-                        else
-                        {
-                            freeJuniors.Add(juniorPreferences.First(jp => jp.Junior == currentJunior));
-                            teamLeadMatches[teamLead] = juniorPref.Junior;
-                        }
-                    }
+                    freeJuniors.Add(juniorPref);
+                }
+                else
+                {
+                    freeJuniors.Add(juniorPreferences.First(jp =>
+                        jp.Employee == currentJunior));
+                    teamLeadMatches[teamLead] = juniorPref.Employee;
                 }
             }
-
-            foreach (var match in teamLeadMatches)
-            {
-                var teamLead = match.Key;
-                var junior = match.Value;
-
-                var juniorPref = juniorPreferences.First(jp => jp.Junior == junior);
-                var teamLeadPref = teamLeadPreferences.First(tlp => tlp.TeamLead == teamLead);
-
-                int teamLeadPriority = teamLeadPref.PreferredJuniors[junior];
-                int juniorPriority = juniorPref.PreferredTeamLeads[teamLead];
-
-                teams.Add(new Team(teamLead, junior)
-                {
-                    TeamLeadPriority = teamLeadPriority,
-                    JuniorPriority = juniorPriority
-                });
-            }
-
-            return teams;
         }
 
+        return (from match in teamLeadMatches
+            let teamLead = match.Key
+            let junior = match.Value
+            let juniorPref =
+                juniorPreferences.First(jp => jp.Employee == junior)
+            let teamLeadPref =
+                teamLeadPreferences.First(tlp => tlp.Employee == teamLead)
+            let teamLeadPriority = teamLeadPref.PreferredEmployees[junior]
+            let juniorPriority = juniorPref.PreferredEmployees[teamLead]
+            select new Team(teamLead, junior, teamLeadPriority,
+                juniorPriority)).ToList();
     }
 }

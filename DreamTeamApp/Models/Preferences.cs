@@ -1,16 +1,11 @@
 
 namespace Nsu.HackathonProblem.Contracts.Models
 {
-    public class JuniorPreferences
+    public class EmployeePreferences(
+        Employee employee,
+        Dictionary<Employee, int> preferredEmployees)
     {
-        public Employee Junior { get; set; }
-        public Dictionary<Employee, int> PreferredTeamLeads { get; set; }
-    }
-
-    public class TeamLeadPreferences
-    {
-        public Employee TeamLead { get; set; }
-        public Dictionary<Employee, int> PreferredJuniors { get; set; }
-
+        public Employee Employee { get; init; } = employee;
+        public Dictionary<Employee, int> PreferredEmployees { get; init; } = preferredEmployees;
     }
 }

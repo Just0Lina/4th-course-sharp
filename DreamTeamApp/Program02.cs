@@ -3,19 +3,19 @@ using Nsu.HackathonProblem.Core;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-class Program
+class Program02
 {
     static void Main(string[] args)
     {
         using var host = Host.CreateDefaultBuilder(args)
         
-            .ConfigureServices((hostContext, services) =>
+            .ConfigureServices((_, services) =>
             {
                 services.AddHostedService<HackathonWorker>();
 
                 services.AddTransient<IPreferencesService, PreferencesService>();
                 services.AddTransient<ITeamFormationService, TeamFormationService>();
-                services.AddTransient<CsvReaderService>();
+                services.AddTransient<IRatingService, RatingService>();
 
                 services.AddTransient<Hackathon>();
                 services.AddTransient<HrManager>();

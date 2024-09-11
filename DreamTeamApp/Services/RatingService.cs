@@ -1,25 +1,19 @@
+using Nsu.HackathonProblem.Contracts.Models;
 
-namespace Nsu.HackathonProblem.Contracts.Services
+namespace Nsu.HackathonProblem.Contracts.Services;
+
+public class RatingService : IRatingService
 {
-    using System.Collections.Generic;
-    using Nsu.HackathonProblem.Contracts.Models;
-    public class RatingService
+    public double CalculateHarmonicMean(List<Team> teams)
     {
+        var n = teams.Count * 2;
 
-        public double CalculateHarmonicMean(List<Team> teams)
-        {
-            double sumOfReciprocals = 0;
-            int n = teams.Count * 2;
+        var sumOfReciprocals = (from team in teams
+            let teamLeadSatisfaction = team.TeamLeadPriority
+            let juniorSatisfaction = team.JuniorPriority
+            select (1.0 / teamLeadSatisfaction) +
+                   (1.0 / juniorSatisfaction)).Sum();
 
-            foreach (var team in teams)
-            {
-                int teamLeadSatisfaction = team.TeamLeadPriority;
-                int juniorSatisfaction = team.JuniorPriority;
-
-                sumOfReciprocals += (1.0 / teamLeadSatisfaction) + (1.0 / juniorSatisfaction);
-            }
-
-            return n / sumOfReciprocals;
-        }
+        return n / sumOfReciprocals;
     }
 }

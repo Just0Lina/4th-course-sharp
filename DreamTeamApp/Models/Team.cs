@@ -1,18 +1,13 @@
-﻿
-namespace Nsu.HackathonProblem.Contracts.Models
+﻿namespace Nsu.HackathonProblem.Contracts.Models;
+
+public class Team(
+    Employee teamLead,
+    Employee junior,
+    int teamLeadPriority,
+    int juniorPriority)
 {
-    public class Team
-    {
-        public Employee TeamLead { get; set; }
-        public Employee Junior { get; set; }
-
-        public int TeamLeadPriority { get; set; }
-        public int JuniorPriority { get; set; }
-
-        public Team(Employee teamLead, Employee junior)
-        {
-            TeamLead = teamLead;
-            Junior = junior;
-        }
-    }
+    public Employee TeamLead { get; } = teamLead;
+    public Employee Junior { get; } = junior;
+    public int TeamLeadPriority { get; } = teamLeadPriority;
+    public int JuniorPriority { get; } = juniorPriority;
 }

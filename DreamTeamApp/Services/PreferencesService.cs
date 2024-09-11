@@ -1,50 +1,38 @@
+using Nsu.HackathonProblem.Contracts.Models;
 
-namespace Nsu.HackathonProblem.Contracts.Services
+namespace Nsu.HackathonProblem.Contracts.Services;
+
+public class PreferencesService : IPreferencesService
 {
-    using System.Linq;
-    using Nsu.HackathonProblem.Contracts.Models;
-
-
-    public class PreferencesService : IPreferencesService
+    public List<EmployeePreferences> CreatePreferences(
+        List<Employee> employees, List<Employee> employeesForPreferences)
     {
-        public List<JuniorPreferences> CreateJuniorPreferences(List<Employee> juniors, List<Employee> teamLeads)
+        var workerPreferences = new List<EmployeePreferences>();
+
+        foreach (var employee in employees)
         {
-            var juniorPreferences = new List<JuniorPreferences>();
+            var preferences = employeesForPreferences
+                .OrderBy(x => Guid.NewGuid()).ToList();
+            var preferredWorkers = preferences.Select((teamLead, index) =>
+                    new
+                    {
+                        teamLead,
+                        priority = employeesForPreferences.Count - index
+                    })
+                .ToDictionary(x => x.teamLead, x => x.priority);
 
-            foreach (var junior in juniors)
-            {
-                var preferences = teamLeads.OrderBy(x => Guid.NewGuid()).ToList();
-                var preferredTeamLeads = preferences.Select((teamLead, index) => new { teamLead, priority = teamLeads.Count - index })
-                                                     .ToDictionary(x => x.teamLead, x => x.priority);
-
-                juniorPreferences.Add(new JuniorPreferences
-                {
-                    Junior = junior,
-                    PreferredTeamLeads = preferredTeamLeads
-                });
-            }
-
-            return juniorPreferences;
+            workerPreferences.Add(new EmployeePreferences(
+                employee, preferredWorkers));
         }
 
-        public List<TeamLeadPreferences> CreateTeamLeadPreferences(List<Employee> teamLeads, List<Employee> juniors)
-        {
-            var teamLeadPreferences = new List<TeamLeadPreferences>();
+        return workerPreferences;
+    }
 
-            foreach (var teamLead in teamLeads)
-            {
-                var preferences = juniors.OrderBy(x => Guid.NewGuid()).ToList();
-                var preferredJuniors = preferences.Select((junior, index) => new { junior, priority = teamLeads.Count - index })
-                                                     .ToDictionary(x => x.junior, x => x.priority);
-
-                teamLeadPreferences.Add(new TeamLeadPreferences
-                {
-                    TeamLead = teamLead,
-                    PreferredJuniors = preferredJuniors
-                });
-            }
-
-            return teamLeadPreferences;
-        }
+    public (List<EmployeePreferences>, List<EmployeePreferences>)
+        GeneratePreferences(List<Employee> juniors, List<Employee> teamLeads)
+    {
+        var juniorPreferences = CreatePreferences(juniors, teamLeads);
+        var teamLeadPreferences = CreatePreferences(teamLeads, juniors);
+        return (juniorPreferences, teamLeadPreferences);
     }
 }
