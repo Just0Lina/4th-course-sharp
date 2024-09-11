@@ -3,7 +3,7 @@ using DreamTeamApp.Nsu.HackathonProblem.Services.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Nsu.HackathonProblem.Core;
-using Nsu.HackathonProblem.Nsu.HackathonProblem.Workers;
+using Nsu.HackathonProblem.Workers;
 
 class Program02
 {

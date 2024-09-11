@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Nsu.HackathonProblem.Core;
 using Nsu.HackathonProblem.Models;
 
-namespace Nsu.HackathonProblem.Nsu.HackathonProblem.Workers
+namespace Nsu.HackathonProblem.Workers
 {
     public class HackathonWorker(
         HrDirector hrDirector)
