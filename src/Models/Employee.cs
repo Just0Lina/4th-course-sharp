@@ -1,5 +1,4 @@
-﻿
-namespace Nsu.HackathonProblem.Models
+﻿namespace Nsu.HackathonProblem.Models
 {
     public record Employee(int Id, string Name);
 }

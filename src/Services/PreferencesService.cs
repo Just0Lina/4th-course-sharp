@@ -3,7 +3,8 @@ using Nsu.HackathonProblem.Models;
 
 namespace DreamTeamApp.Nsu.HackathonProblem.Services;
 
-public class PreferencesService : IPreferencesService
+public class PreferencesService
+    : IPreferencesService
 {
     public List<EmployeePreferences> CreatePreferences(
         List<Employee> employees, List<Employee> employeesForPreferences)
@@ -29,7 +30,8 @@ public class PreferencesService : IPreferencesService
         return workerPreferences;
     }
 
-    public (List<EmployeePreferences>, List<EmployeePreferences>)
+    public (List<EmployeePreferences> juniorPreferences,
+        List<EmployeePreferences> teamLeadPreferences)
         GeneratePreferences(List<Employee> juniors, List<Employee> teamLeads)
     {
         var juniorPreferences = CreatePreferences(juniors, teamLeads);

@@ -7,11 +7,17 @@ public class HrManager(
     ITeamFormationService teamBuildingStrategy,
     Hackathon hackathon)
 {
-    public List<Team> FormTeams(List<Employee> juniors,
-        List<Employee> teamLeads)
+    public (List<EmployeePreferences>, List<EmployeePreferences>)
+        GetPreferences(List<Employee> juniors,
+            List<Employee> teamLeads)
     {
-        var (juniorPreferences, teamLeadPreferences) =
+        return
             hackathon.GeneratePreferences(juniors, teamLeads);
+    }
+
+    public List<Team> FormTeams(List<EmployeePreferences> juniorPreferences,
+        List<EmployeePreferences> teamLeadPreferences)
+    {
         return teamBuildingStrategy.FormTeams(juniorPreferences,
             teamLeadPreferences);
     }

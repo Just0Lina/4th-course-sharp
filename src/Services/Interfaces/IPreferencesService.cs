@@ -7,7 +7,8 @@ public interface IPreferencesService
     List<EmployeePreferences> CreatePreferences(List<Employee> juniors,
         List<Employee> teamLeads);
 
-    (List<EmployeePreferences>, List<EmployeePreferences>)
+    (List<EmployeePreferences> juniorPreferences, List<EmployeePreferences>
+        teamLeadPreferences)
         GeneratePreferences(List<Employee> juniors,
             List<Employee> teamLeads);
 }

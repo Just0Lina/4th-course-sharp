@@ -1,21 +1,23 @@
 using DreamTeamApp.Nsu.HackathonProblem.Services;
-using Microsoft.Extensions.Hosting;
 using Nsu.HackathonProblem.Core;
-using Nsu.HackathonProblem.Models;
 
 namespace Nsu.HackathonProblem.Workers
 {
     public class HackathonWorker(
-        HrDirector hrDirector)
+        HrDirector hrDirector,
+        EmployeeService employeeService)
         : IHostedService
     {
-        private readonly List<Employee> _juniors = CsvReaderService.ReadEmployees("Resources/Juniors20.csv");
-        private readonly List<Employee> _teamLeads = CsvReaderService.ReadEmployees("Resources/Teamleads20.csv");
-
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
-            hrDirector.OverseeHackathons(1000, _juniors, _teamLeads);
-            return Task.CompletedTask;
+            await employeeService.SaveEmployeesFromCsvAsync(
+                CsvFilePaths.JuniorsCsvPath, CsvFilePaths.TeamLeadsCsvPath);
+            var juniors = await employeeService.GetJuniorsAsync();
+            var teamLeads = await employeeService.GetTeamLeadsAsync();
+
+            await hrDirector.OverseeHackathons(10, juniors, teamLeads);
+            await hrDirector.PrintHackathonResultsAsync(6);
+            await hrDirector.CalculateAverageHarmonyAsync();
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
@@ -23,6 +25,4 @@ namespace Nsu.HackathonProblem.Workers
             return Task.CompletedTask;
         }
     }
-    
-    
 }

@@ -14,7 +14,7 @@ public class TeamFormationService : ITeamFormationService
         var juniorProposals = juniorPreferences.ToDictionary(
             jp => jp.Employee,
             jp => new Queue<Employee>(jp.PreferredEmployees
-                .Keys)); // Очередь предпочтений для каждого джуна
+                .Keys));
 
         while (freeJuniors.Count > 0)
         {
