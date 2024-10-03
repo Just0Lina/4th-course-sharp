@@ -1,8 +1,11 @@
 using DreamTeamApp.Nsu.HackathonProblem.Services;
 using DreamTeamApp.Nsu.HackathonProblem.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using Nsu.HackathonProblem.Core;
+using Nsu.HackathonProblem.Database;
 using Nsu.HackathonProblem.Models;
+using Nsu.HackathonProblem.Repositories;
 
 namespace Nsu.HackathonProblem.Tests.Core;
 
@@ -65,6 +68,11 @@ public class HrDirectorTests
     {
         var juniors = GetDefaultJuniors();
         var teamLeads = GetDefaultTeamLeads();
+        var options = new DbContextOptionsBuilder<HackathonDbContext>()
+            .UseInMemoryDatabase("HackathonDb")
+            .Options;
+
+        using var mockDb = new HackathonDbContext(options);
 
         var expectedTeams = GetDefaultExpectedTeams(teamLeads, juniors);
         var juniorsPreferencesList =
@@ -79,7 +87,10 @@ public class HrDirectorTests
         service.Setup(s =>
                 s.CalculateHarmonicMean(expectedTeams))
             .Returns(3);
-        var hrDirector = new HrDirector(service.Object, hrManager);
+        var hackathonRepository = new HackathonRepository(mockDb);
+        var employeeRepository = new EmployeeRepository(mockDb);
+        var hrDirector = new HrDirector(service.Object, hrManager,
+            hackathonRepository, employeeRepository);
 
 
         hrDirector.OverseeHackathons(3, juniors, teamLeads);
@@ -121,16 +132,25 @@ public class HrDirectorTests
                     It.IsAny<List<Employee>>()))
             .Returns((juniorsPreferencesList, teamLeadsPreferencesList));
         var mockHackathon = new Hackathon(preferenceServiceMock.Object);
+        var options = new DbContextOptionsBuilder<HackathonDbContext>()
+            .UseInMemoryDatabase("HackathonDb")
+            .Options;
 
+        using var mockDb = new HackathonDbContext(options);
 
         var teamFormationService = new TeamFormationService();
 
         var hrManager =
             new HrManager(teamFormationService, mockHackathon);
         var ratingService = new RatingService();
-        var hrDirector = new HrDirector(ratingService, hrManager);
-        var teams = hrManager.FormTeams([junior],
-            [teamLead]);
+
+        var hackathonRepository = new HackathonRepository(mockDb);
+        var employeeRepository = new EmployeeRepository(mockDb);
+        var hrDirector = new HrDirector(ratingService, hrManager,
+            hackathonRepository, employeeRepository);
+
+        var teams = hrManager.FormTeams(juniorsPreferencesList,
+            teamLeadsPreferencesList);
         var harmony = hrDirector.CalculateOverallHarmony(teams);
 
         Assert.Equal(1.0, harmony);

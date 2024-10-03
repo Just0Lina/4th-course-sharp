@@ -17,7 +17,7 @@ namespace Nsu.HackathonProblem.Workers
 
             await hrDirector.OverseeHackathons(10, juniors, teamLeads);
             await hrDirector.PrintHackathonResultsAsync(6);
-            await hrDirector.CalculateAverageHarmonyAsync();
+            await hrDirector.PrintAverageHarmonyAsync();
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

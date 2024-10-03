@@ -1,4 +1,5 @@
 using DreamTeamApp.Nsu.HackathonProblem.Services;
+using static Nsu.HackathonProblem.Tests.Core.CommonMethods;
 
 namespace Nsu.HackathonProblem.Tests.Core;
 

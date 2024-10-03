@@ -1,6 +1,7 @@
 using Moq;
 using Nsu.HackathonProblem.Core;
 using Nsu.HackathonProblem.Models;
+using static Nsu.HackathonProblem.Tests.Core.CommonMethods;
 
 namespace Nsu.HackathonProblem.Tests.Core;
 
@@ -20,8 +21,10 @@ public class HrManagerTests
             GetTeamLeadsPreferencesList(teamLeads, juniors);
         var hrManager = MockHrManager(juniors, teamLeads,
             juniorsPreferencesList, teamLeadsPreferencesList, expectedTeams);
-
-        var teams = hrManager.FormTeams(juniors, teamLeads);
+        var (juniorPreferences, teamLeadPreferences) =
+            hrManager.GetPreferences(juniors, teamLeads);
+        var teams =
+            hrManager.FormTeams(juniorPreferences, teamLeadPreferences);
 
         Assert.Equal(expectedTeams.Count, teams.Count);
     }
@@ -41,7 +44,8 @@ public class HrManagerTests
         var hrManager = MockHrManager(juniors, teamLeads,
             juniorsPreferencesList, teamLeadsPreferencesList, expectedTeams);
 
-        var teams = hrManager.FormTeams(juniors, teamLeads);
+        var teams = hrManager.FormTeams(juniorsPreferencesList,
+            teamLeadsPreferencesList);
         foreach (var team in teams)
         {
             Assert.Contains(team, expectedTeams);
@@ -68,11 +72,12 @@ public class HrManagerTests
 
         var hrManager = new HrManager(mockTeamFormationService.Object,
             mockHackathon.Object);
-        hrManager.FormTeams(juniors, teamLeads);
+        var (juniorPreferences, teamLeadPreferences) =
+            hrManager.GetPreferences(juniors, teamLeads);
+        hrManager.FormTeams(juniorPreferences, teamLeadPreferences);
+
         mockTeamFormationService.Verify(
             s => s.FormTeams(It.IsAny<List<EmployeePreferences>>(),
                 It.IsAny<List<EmployeePreferences>>()), Times.Once);
     }
-
-
 }
