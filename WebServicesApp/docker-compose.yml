@@ -1,0 +1,210 @@
+version: '3.8'
+#           docker rm -f $(docker ps -aq) && docker rmi -f $(docker images -q)
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hackathon_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  
+  hr_manager:
+    build:
+      context: .
+      dockerfile: hr_manager/Dockerfile
+    ports:
+      - "5011:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    deploy:
+      replicas: 1
+    depends_on:
+      - hr_director
+
+  hr_director:
+    build:
+      context: .
+      dockerfile: hr_director/Dockerfile
+    ports:
+      - "5012:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__HackathonDbContext="Host=db;Port=5432;Database=hackathon_db;Username=postgres;Password=postgres"
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      replicas: 1
+  teamlead-1:
+    build:
+      context: .
+      dockerfile: employee/Dockerfile
+    ports:
+      - "5001:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    deploy:
+      replicas: 1
+    environment:
+      - EMPLOYEE_TYPE=teamlead
+      - EMPLOYEE_ID=1
+    depends_on:
+      - hr_manager
+
+  teamlead-2:
+    build:
+      context: .
+      dockerfile: employee/Dockerfile
+    ports:
+      - "5002:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    deploy:
+      replicas: 1
+    environment:
+      - EMPLOYEE_TYPE=teamlead
+      - EMPLOYEE_ID=2
+    depends_on:
+      - hr_manager
+
+  teamlead-3:
+    build:
+      context: .
+      dockerfile: employee/Dockerfile
+    ports:
+      - "5003:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    deploy:
+      replicas: 1
+    environment:
+      - EMPLOYEE_TYPE=teamlead
+      - EMPLOYEE_ID=3
+    depends_on:
+      - hr_manager
+
+  teamlead-4:
+    build:
+      context: .
+      dockerfile: employee/Dockerfile
+    ports:
+      - "5004:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    deploy:
+      replicas: 1
+    environment:
+      - EMPLOYEE_TYPE=teamlead
+      - EMPLOYEE_ID=4
+    depends_on:
+      - hr_manager
+
+  teamlead-5:
+    build:
+      context: .
+      dockerfile: employee/Dockerfile
+    ports:
+      - "5005:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    deploy:
+      replicas: 1
+    environment:
+      - EMPLOYEE_TYPE=teamlead
+      - EMPLOYEE_ID=5
+    depends_on:
+      - hr_manager
+
+  junior-1:
+    build:
+      context: .
+      dockerfile: employee/Dockerfile
+    ports:
+      - "6001:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    deploy:
+      replicas: 1
+    environment:
+      - EMPLOYEE_TYPE=junior
+      - EMPLOYEE_ID=1
+    depends_on:
+      - hr_manager
+
+  junior-2:
+    build:
+      context: .
+      dockerfile: employee/Dockerfile
+    ports:
+      - "6002:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    deploy:
+      replicas: 1
+    environment:
+      - EMPLOYEE_TYPE=junior
+      - EMPLOYEE_ID=2
+    depends_on:
+      - hr_manager
+
+  junior-3:
+    build:
+      context: .
+      dockerfile: employee/Dockerfile
+    ports:
+      - "6003:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    deploy:
+      replicas: 1
+    environment:
+      - EMPLOYEE_TYPE=junior
+      - EMPLOYEE_ID=3
+    depends_on:
+      - hr_manager
+
+  junior-4:
+    build:
+      context: .
+      dockerfile: employee/Dockerfile
+    ports:
+      - "6004:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    deploy:
+      replicas: 1
+    environment:
+      - EMPLOYEE_TYPE=junior
+      - EMPLOYEE_ID=4
+    depends_on:
+      - hr_manager
+
+  junior-5:
+    build:
+      context: .
+      dockerfile: employee/Dockerfile
+    ports:
+      - "6005:8080"
+    volumes:
+      - ./shared-data-dir:/app/shared-data
+    deploy:
+      replicas: 1
+    environment:
+      - EMPLOYEE_TYPE=junior
+      - EMPLOYEE_ID=5
+    depends_on:
+      - hr_manager
+
