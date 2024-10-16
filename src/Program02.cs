@@ -3,6 +3,7 @@ using DreamTeamApp.Nsu.HackathonProblem.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Nsu.HackathonProblem.Core;
 using Nsu.HackathonProblem.Database;
+using Nsu.HackathonProblem.Repositories;
 using Nsu.HackathonProblem.Workers;
 
 class Program02
@@ -29,6 +30,12 @@ class Program02
                 services
                     .AddTransient<ITeamFormationService,
                         TeamFormationService>();
+                services
+                    .AddTransient<IHackathonRepository,
+                        HackathonRepository>();
+                services
+                    .AddTransient<IEmployeeRepository,
+                        EmployeeRepository>();
                 services.AddTransient<IRatingService, RatingService>();
 
                 services.AddDbContext<HackathonDbContext>(options =>
