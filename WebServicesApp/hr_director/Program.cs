@@ -3,6 +3,8 @@ using Nsu.HackathonProblem.HrDirector;
 using Nsu.HackathonProblem.HrDirector.Database;
 using Nsu.HackathonProblem.HrDirector.Repository;
 using Nsu.HackathonProblem.HrDirector.Services;
+using Nsu.HackathonProblem.SharedData.Services;
+using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -20,6 +22,22 @@ builder.Services.AddDbContext<HackathonDbContext>(options =>
 builder.Services
     .AddScoped<IHarmonyCalculationService, HarmonyCalculationService>();
 builder.Services.AddScoped<IHackathonRepository, HackathonRepository>();
+builder.Services.AddSingleton<IRabbitMqService, RabbitMqService>();
+
+builder.Services.AddSingleton<IConnection>(provider =>
+{
+    var factory = new ConnectionFactory() { HostName = "rabbitmq" };
+    return factory.CreateConnection();
+});
+
+builder.Services.AddSingleton<IModel>(provider =>
+{
+    var connection = provider.GetRequiredService<IConnection>();
+    return connection.CreateModel();
+});
+
+builder.Services.AddScoped<RabbitMqService>();
+
 
 var app = builder.Build();
 

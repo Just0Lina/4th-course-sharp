@@ -1,7 +1,6 @@
 using Nsu.HackathonProblem.SharedData.Models;
 using Nsu.HackathonProblem.SharedData.Services;
-
-namespace Nsu.HackathonProblem.TeamLead.Service;
+using Nsu.HackathonProblem.TeamLead.Service;
 
 public class StartupService(
     IHttpClientFactory httpClientFactory,
@@ -11,12 +10,18 @@ public class StartupService(
 {
     private const string EmployeeIdEnvVariable = "EMPLOYEE_ID";
     private const string EmployeeTypeEnvVariable = "EMPLOYEE_TYPE";
+    private const string SubmitPreferencesUrlTemplate = "http://hr_manager:8080/api/hr/submit-{0}-preferences";
 
-    private const string SubmitPreferencesUrlTemplate =
-        "http://hr_manager:8080/api/hr/submit-{0}-preferences";
-
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
+        HackathonStartConsumer.HackathonStarted += OnHackathonStarted;
+        return Task.CompletedTask;
+    }
+
+    private async void OnHackathonStarted(HackathonAnnouncementMessage hackathonStartedEvent)
+    {
+        var cancellationToken = CancellationToken.None; // This may need to be handled differently based on your logic
+
         var employeeType = GetEmployeeTypeFromEnvironment();
         Console.WriteLine(employeeType);
 
@@ -24,7 +29,7 @@ public class StartupService(
 
         if (employeeId == null || string.IsNullOrEmpty(employeeType))
         {
-            logger.LogWarning("Invalid environment variables. ");
+            logger.LogWarning("Invalid environment variables.");
             return;
         }
 
@@ -36,10 +41,8 @@ public class StartupService(
         }
 
         var employeePreferences = await GetTeamLeadsAsync();
-        var preferences =
-            preferencesService.CreatePreferences(employee, employeePreferences);
-        await SubmitPreferencesAsync(employee, preferences, employeeType,
-            cancellationToken);
+        var preferences = preferencesService.CreatePreferences(employee, employeePreferences);
+        await SubmitPreferencesAsync(employee, preferences, employeeType, cancellationToken);
     }
 
     private string? GetEmployeeTypeFromEnvironment()
@@ -49,8 +52,7 @@ public class StartupService(
 
     private int? GetEmployeeIdFromEnvironment()
     {
-        var employeeIdStr =
-            Environment.GetEnvironmentVariable(EmployeeIdEnvVariable);
+        var employeeIdStr = Environment.GetEnvironmentVariable(EmployeeIdEnvVariable);
         if (int.TryParse(employeeIdStr, out var employeeId))
         {
             return employeeId;
@@ -59,17 +61,14 @@ public class StartupService(
         return null;
     }
 
-    private async Task<Employee?> GetEmployeeAsync(int employeeId,
-        string employeeType)
+    private async Task<Employee?> GetEmployeeAsync(int employeeId, string employeeType)
     {
         if (employeeType == "teamlead")
         {
-            return DataService.ReadEmployeeById(DataService.JuniorsCsv,
-                employeeId);
+            return DataService.ReadEmployeeById(DataService.JuniorsCsv, employeeId);
         }
 
-        return DataService.ReadEmployeeById(DataService.teamLeadsCsv,
-            employeeId);
+        return DataService.ReadEmployeeById(DataService.teamLeadsCsv, employeeId);
     }
 
     private async Task<List<Employee>> GetTeamLeadsAsync()
@@ -77,19 +76,13 @@ public class StartupService(
         return DataService.ReadEmployees(DataService.teamLeadsCsv);
     }
 
-    private async Task SubmitPreferencesAsync(Employee employee,
-        Wishlist preferences, string employeeType,
-        CancellationToken cancellationToken)
+    private async Task SubmitPreferencesAsync(Employee employee, Wishlist preferences, string employeeType, CancellationToken cancellationToken)
     {
         var request = new RequestToHr(employee, preferences);
         var client = httpClientFactory.CreateClient();
-        var submitUrl =
-            string.Format(SubmitPreferencesUrlTemplate, employeeType);
+        var submitUrl = string.Format(SubmitPreferencesUrlTemplate, employeeType);
 
-        var response = await client.PostAsJsonAsync(
-            submitUrl,
-            request,
-            cancellationToken: cancellationToken);
+        var response = await client.PostAsJsonAsync(submitUrl, request, cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -97,13 +90,13 @@ public class StartupService(
         }
         else
         {
-            logger.LogError(
-                $"Failed to submit preferences. Status code: {response.StatusCode}");
+            logger.LogError($"Failed to submit preferences. Status code: {response.StatusCode}");
         }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
+        HackathonStartConsumer.HackathonStarted -= OnHackathonStarted;
         return Task.CompletedTask;
     }
 }

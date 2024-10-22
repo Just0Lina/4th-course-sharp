@@ -1,0 +1,249 @@
+# This is a generated file. Not intended for manual editing.
+version: "3.8"
+services:
+  hr_director:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "hr_director/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/hr_director.dll"
+    environment:
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "hr_director:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/root/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/hr_director:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  hr_manager:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "hr_manager/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/hr_manager.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "hr_manager:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/hr_manager:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  junior-1:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "employee/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/employee.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "employee:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/employee:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  junior-2:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "employee/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/employee.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "employee:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/employee:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  junior-3:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "employee/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/employee.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "employee:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/employee:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  junior-4:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "employee/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/employee.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "employee:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/employee:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  junior-5:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "employee/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/employee.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "employee:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/employee:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  teamlead-1:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "employee/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/employee.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "employee:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/employee:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  teamlead-2:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "employee/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/employee.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "employee:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/employee:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  teamlead-3:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "employee/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/employee.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "employee:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/employee:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  teamlead-4:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "employee/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/employee.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "employee:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/employee:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  teamlead-5:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "employee/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/employee.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "employee:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/employee:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"
+  x-employee-base:
+    build:
+      context: "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp"
+      dockerfile: "employee/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/employee.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "employee:dev"
+    ports: []
+    volumes:
+    - "/home/alina/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp/employee:/app:rw"
+    - "/home/alina/RiderProjects/4th-course-sharp/WebServicesApp:/src:rw"
+    working_dir: "/app"

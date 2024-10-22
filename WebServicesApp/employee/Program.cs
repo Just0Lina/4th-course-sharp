@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IPreferencesService, PreferencesService>();
+builder.Services.AddSingleton<IRabbitMqService, RabbitMqService>();
+builder.Services.AddHostedService<HackathonStartConsumer>();
 builder.Services.AddHostedService<StartupService>();
 
 var app = builder.Build();
@@ -16,9 +18,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();
-});
+app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
 
 app.Run();
