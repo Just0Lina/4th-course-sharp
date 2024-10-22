@@ -39,7 +39,12 @@ public class HackathonRepositoryTests
     [Fact]
     public async Task GetHackathon_Should_ReturnCorrectHackathon()
     {
+        var team1 = new TeamEntity { TeamLeadId = 1, JuniorId = 2 };
+        var team2 = new TeamEntity { TeamLeadId = 3, JuniorId = 4 };
         var hackathon = new HackathonEntity { Harmony = 90.0m };
+
+        hackathon.Teams = new List<TeamEntity> { team1, team2 };
+
         await _repository.AddHackathonAsync(hackathon);
         await _context.SaveChangesAsync();
 
@@ -48,6 +53,12 @@ public class HackathonRepositoryTests
 
         Assert.NotNull(retrievedHackathon);
         Assert.Equal(hackathon.Harmony, retrievedHackathon.Harmony);
+        Assert.Equal(hackathon.Id, retrievedHackathon.Id);
+        Assert.Equal(team1.TeamLeadId, retrievedHackathon.Teams[0].TeamLeadId);
+        Assert.Equal(team1.JuniorId, retrievedHackathon.Teams[0].JuniorId);
+        Assert.Equal(team2.TeamLeadId, retrievedHackathon.Teams[1].TeamLeadId);
+        Assert.Equal(team2.JuniorId, retrievedHackathon.Teams[1].JuniorId);
+        Assert.Equal(hackathon.Teams.Count, retrievedHackathon.Teams.Count);
     }
 
     [Fact]

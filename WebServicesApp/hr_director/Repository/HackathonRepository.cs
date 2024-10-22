@@ -4,23 +4,25 @@ using Nsu.HackathonProblem.SharedData.Models;
 
 namespace Nsu.HackathonProblem.HrDirector.Repository;
 
-public class HackathonRepository(HackathonDbContext context)
+public class HackathonRepository(
+    HackathonDbContext? context,
+    ILogger<HackathonRepository> logger)
     : IHackathonRepository
 {
     public async Task AddHackathonAsync(HackathonEntity hackathon)
     {
         try
         {
-            Console.WriteLine("Adding hackathon");
+            logger.LogInformation("Adding hackathon");
             context.Hackathons.Add(hackathon);
 
 
             await context.SaveChangesAsync();
-            Console.WriteLine($"Inserted Hackathon ID: {hackathon.Id}");
+            logger.LogInformation($"Inserted Hackathon ID: {hackathon.Id}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving hackathon: {ex.Message}");
+            logger.LogInformation($"Error saving hackathon: {ex.Message}");
         }
     }
 
@@ -76,41 +78,46 @@ public class HackathonRepository(HackathonDbContext context)
     {
         foreach (var team in teams)
         {
-            var teamLead = new EmployeeEntity(team.TeamLead.Id, team.TeamLead.Name, Role.TeamLead);
-            var junior = new EmployeeEntity(team.Junior.Id, team.Junior.Name, Role.Junior);
+            var teamLead = new EmployeeEntity(team.TeamLead.Id,
+                team.TeamLead.Name, Role.TeamLead);
+            var junior = new EmployeeEntity(team.Junior.Id, team.Junior.Name,
+                Role.Junior);
 
-            var existingTeamLead = await context.Employees.FindAsync(teamLead.Id, Role.TeamLead);
+            var existingTeamLead =
+                await context.Employees.FindAsync(teamLead.Id, Role.TeamLead);
             if (existingTeamLead == null)
             {
                 context.Employees.Add(teamLead);
             }
-           
 
-            var existingJunior = await context.Employees.FindAsync(junior.Id,Role.Junior);
+
+            var existingJunior =
+                await context.Employees.FindAsync(junior.Id, Role.Junior);
             if (existingJunior == null)
             {
                 context.Employees.Add(junior);
             }
-           
         }
 
         try
         {
             await context.SaveChangesAsync();
-            Console.WriteLine("Employees saved successfully.");
+            logger.LogInformation("Employees saved successfully.");
         }
         catch (DbUpdateException dbEx)
         {
-            Console.WriteLine($"An error occurred while saving changes: {dbEx.Message}");
+            logger.LogInformation(
+                $"An error occurred while saving changes: {dbEx.Message}");
             if (dbEx.InnerException != null)
             {
-                Console.WriteLine($"Inner exception: {dbEx.InnerException.Message}");
+                logger.LogInformation(
+                    $"Inner exception: {dbEx.InnerException.Message}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+            logger.LogInformation(
+                $"An unexpected error occurred: {ex.Message}");
         }
     }
-
 }

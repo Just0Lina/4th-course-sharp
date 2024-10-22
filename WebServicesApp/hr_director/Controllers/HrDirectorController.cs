@@ -6,7 +6,8 @@ namespace Nsu.HackathonProblem.HrDirector.Controllers;
 
 [ApiController]
 [Route("api/hrdirector")]
-public class HrDirectorController(IHarmonyCalculationService harmonyService)
+public class HrDirectorController(IHarmonyCalculationService harmonyService,
+    ILogger<HrDirectorController> logger)
     : ControllerBase
 {
     [HttpPost("calculate-harmony")]
@@ -18,7 +19,7 @@ public class HrDirectorController(IHarmonyCalculationService harmonyService)
         var teamLeadPreferences = teamsAndPreferencesEntity.TeamLeadPreferences;
         var harmonyIndex = harmonyService.CalculateHarmony(juniorPreferences,
             teamLeadPreferences, teams);
-        Console.WriteLine($"Harmony calculated: {harmonyIndex}");
+        logger.LogInformation($"Harmony calculated: {harmonyIndex}");
         await harmonyService.SaveHackathon(juniorPreferences, teamLeadPreferences,
             teams, harmonyIndex);
 

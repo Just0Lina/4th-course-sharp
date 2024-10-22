@@ -1,43 +1,45 @@
 version: '3.8'
-#           docker rm -f $(docker ps -aq) && docker rmi -f $(docker images -q)
 
 services:
   db:
     image: postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: hackathon_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "pg_isready" ]
+      test: ["CMD-SHELL", "pg_isready -d hackathon_db -U postgres || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 5
-  
+      retries: 3
+    networks:
+      - hackathon_net
   
   hr_manager:
     build:
       context: .
       dockerfile: hr_manager/Dockerfile
     ports:
-      - "5011:8080"
+      - "${HR_MANAGER_PORT:-5011}:8080"
     volumes:
       - ./shared-data-dir:/app/shared-data
     deploy:
       replicas: 1
     depends_on:
       - hr_director
+    networks:
+      - hackathon_net
 
   hr_director:
     build:
       context: .
       dockerfile: hr_director/Dockerfile
     ports:
-      - "5012:8080"
+      - "${HR_DIRECTOR_PORT:-5012}:8080"
     volumes:
       - ./shared-data-dir:/app/shared-data
     environment:
@@ -48,163 +50,102 @@ services:
         condition: service_healthy
     deploy:
       replicas: 1
-  teamlead-1:
+    networks:
+      - hackathon_net
+
+  x-employee-base: &employee-base
     build:
       context: .
       dockerfile: employee/Dockerfile
-    ports:
-      - "5001:8080"
     volumes:
       - ./shared-data-dir:/app/shared-data
     deploy:
       replicas: 1
-    environment:
-      - EMPLOYEE_TYPE=teamlead
-      - EMPLOYEE_ID=1
     depends_on:
       - hr_manager
+    networks:
+      - hackathon_net
+
+  teamlead-1:
+    <<: *employee-base
+    ports:
+      - "${TEAMLEAD_1_PORT:-5001}:8080"
+    environment:
+      - EmployeeSettings__EmployeeType=teamlead
+      - EmployeeSettings__EmployeeId=1
 
   teamlead-2:
-    build:
-      context: .
-      dockerfile: employee/Dockerfile
+    <<: *employee-base
     ports:
-      - "5002:8080"
-    volumes:
-      - ./shared-data-dir:/app/shared-data
-    deploy:
-      replicas: 1
+      - "${TEAMLEAD_2_PORT:-5002}:8080"
     environment:
-      - EMPLOYEE_TYPE=teamlead
-      - EMPLOYEE_ID=2
-    depends_on:
-      - hr_manager
+      - EmployeeSettings__EmployeeType=teamlead
+      - EmployeeSettings__EmployeeId=2
 
   teamlead-3:
-    build:
-      context: .
-      dockerfile: employee/Dockerfile
+    <<: *employee-base
     ports:
-      - "5003:8080"
-    volumes:
-      - ./shared-data-dir:/app/shared-data
-    deploy:
-      replicas: 1
+      - "${TEAMLEAD_3_PORT:-5003}:8080"
     environment:
-      - EMPLOYEE_TYPE=teamlead
-      - EMPLOYEE_ID=3
-    depends_on:
-      - hr_manager
+      - EmployeeSettings__EmployeeType=teamlead
+      - EmployeeSettings__EmployeeId=3
 
   teamlead-4:
-    build:
-      context: .
-      dockerfile: employee/Dockerfile
+    <<: *employee-base
     ports:
-      - "5004:8080"
-    volumes:
-      - ./shared-data-dir:/app/shared-data
-    deploy:
-      replicas: 1
+      - "${TEAMLEAD_4_PORT:-5004}:8080"
     environment:
-      - EMPLOYEE_TYPE=teamlead
-      - EMPLOYEE_ID=4
-    depends_on:
-      - hr_manager
+      - EmployeeSettings__EmployeeType=teamlead
+      - EmployeeSettings__EmployeeId=4
 
   teamlead-5:
-    build:
-      context: .
-      dockerfile: employee/Dockerfile
+    <<: *employee-base
     ports:
-      - "5005:8080"
-    volumes:
-      - ./shared-data-dir:/app/shared-data
-    deploy:
-      replicas: 1
+      - "${TEAMLEAD_5_PORT:-5005}:8080"
     environment:
-      - EMPLOYEE_TYPE=teamlead
-      - EMPLOYEE_ID=5
-    depends_on:
-      - hr_manager
+      - EmployeeSettings__EmployeeType=teamlead
+      - EmployeeSettings__EmployeeId=5
 
   junior-1:
-    build:
-      context: .
-      dockerfile: employee/Dockerfile
+    <<: *employee-base
     ports:
-      - "6001:8080"
-    volumes:
-      - ./shared-data-dir:/app/shared-data
-    deploy:
-      replicas: 1
+      - "${JUNIOR_1_PORT:-6001}:8080"
     environment:
-      - EMPLOYEE_TYPE=junior
-      - EMPLOYEE_ID=1
-    depends_on:
-      - hr_manager
+      - EmployeeSettings__EmployeeType=junior
+      - EmployeeSettings__EmployeeId=1
 
   junior-2:
-    build:
-      context: .
-      dockerfile: employee/Dockerfile
+    <<: *employee-base
     ports:
-      - "6002:8080"
-    volumes:
-      - ./shared-data-dir:/app/shared-data
-    deploy:
-      replicas: 1
+      - "${JUNIOR_2_PORT:-6002}:8080"
     environment:
-      - EMPLOYEE_TYPE=junior
-      - EMPLOYEE_ID=2
-    depends_on:
-      - hr_manager
+      - EmployeeSettings__EmployeeType=junior
+      - EmployeeSettings__EmployeeId=2
 
   junior-3:
-    build:
-      context: .
-      dockerfile: employee/Dockerfile
+    <<: *employee-base
     ports:
-      - "6003:8080"
-    volumes:
-      - ./shared-data-dir:/app/shared-data
-    deploy:
-      replicas: 1
+      - "${JUNIOR_3_PORT:-6003}:8080"
     environment:
-      - EMPLOYEE_TYPE=junior
-      - EMPLOYEE_ID=3
-    depends_on:
-      - hr_manager
+      - EmployeeSettings__EmployeeType=junior
+      - EmployeeSettings__EmployeeId=3
 
   junior-4:
-    build:
-      context: .
-      dockerfile: employee/Dockerfile
+    <<: *employee-base
     ports:
-      - "6004:8080"
-    volumes:
-      - ./shared-data-dir:/app/shared-data
-    deploy:
-      replicas: 1
+      - "${JUNIOR_4_PORT:-6004}:8080"
     environment:
-      - EMPLOYEE_TYPE=junior
-      - EMPLOYEE_ID=4
-    depends_on:
-      - hr_manager
+      - EmployeeSettings__EmployeeType=junior
+      - EmployeeSettings__EmployeeId=4
 
   junior-5:
-    build:
-      context: .
-      dockerfile: employee/Dockerfile
+    <<: *employee-base
     ports:
-      - "6005:8080"
-    volumes:
-      - ./shared-data-dir:/app/shared-data
-    deploy:
-      replicas: 1
+      - "${JUNIOR_5_PORT:-6005}:8080"
     environment:
-      - EMPLOYEE_TYPE=junior
-      - EMPLOYEE_ID=5
-    depends_on:
-      - hr_manager
+      - EmployeeSettings__EmployeeType=junior
+      - EmployeeSettings__EmployeeId=5
 
+networks:
+  hackathon_net:
+    driver: bridge

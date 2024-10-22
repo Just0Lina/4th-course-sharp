@@ -5,7 +5,7 @@ namespace Nsu.HackathonProblem.SharedData.Services;
 public static class DataService
 {
     public static readonly string JuniorsCsv = "shared-data/Resources/Juniors5.csv";
-    public static readonly string teamLeadsCsv = "shared-data/Resources/Teamleads5.csv";
+    public static readonly string TeamLeadsCsv = "shared-data/Resources/Teamleads5.csv";
     public static Employee ReadEmployeeById(string filePath, int id)
     {
         var lines = File.ReadAllLines(filePath);
