@@ -47,6 +47,8 @@ if (app.Environment.IsDevelopment())
     app.ApplyMigrations(); 
 }
 
+
+
 app.UseRouting();
 
 app.UseEndpoints(endpoints => { endpoints.MapControllers(); });

@@ -10,8 +10,6 @@ public static class MigrationExtensions
         using var scope = app.ApplicationServices.CreateScope();
         var dbContext =
             scope.ServiceProvider.GetRequiredService<HackathonDbContext>();
-        Console.WriteLine(
-            "Pending migrations detected. Applying migrations...");
         dbContext.Database.Migrate();
     }
 }

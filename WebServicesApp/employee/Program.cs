@@ -1,4 +1,5 @@
 using Nsu.HackathonProblem.SharedData.Services;
+using Nsu.HackathonProblem.TeamLead.Configurations;
 using Nsu.HackathonProblem.TeamLead.Service;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,9 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IPreferencesService, PreferencesService>();
 builder.Services.AddSingleton<IRabbitMqService, RabbitMqService>();
 builder.Services.AddHostedService<HackathonStartConsumer>();
+builder.Configuration.AddEnvironmentVariables();
+var employeeSettingsDto = builder.Configuration.GetSection("EmployeeSettings").Get<EmployeeSettings>()!;
+builder.Services.AddSingleton(employeeSettingsDto);
 builder.Services.AddHostedService<StartupService>();
 
 var app = builder.Build();

@@ -1,14 +1,14 @@
 using Newtonsoft.Json;
 
 namespace Nsu.HackathonProblem.SharedData.Services;
-
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
-public class RabbitMqService : IRabbitMqService
+public class RabbitMqService : IRabbitMqService, IDisposable
 {
     private readonly IConnection _connection;
     private readonly IModel _channel;
@@ -16,41 +16,38 @@ public class RabbitMqService : IRabbitMqService
     public RabbitMqService()
     {
         var factory = new ConnectionFactory()
-            { HostName = "rabbitmq" }; // Adjust the hostname as necessary
+        {
+            HostName = "rabbitmq" // Настройте имя хоста при необходимости
+        };
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
 
-        _channel.QueueDeclare(queue: "hackathon.start",
-            durable: false,
-            exclusive: false,
-            autoDelete: false,
-            arguments: null);
+        // Объявление обменов
+        DeclareExchanges();
     }
 
-    public void Publish<T>(string queueName, T message)
+    private void DeclareExchanges()
     {
-        _channel.QueueDeclare(queue: queueName,
-            durable: false,
-            exclusive: false,
-            autoDelete: false,
-            arguments: null);
+        _channel.ExchangeDeclare(exchange: "hackathon.start", type: ExchangeType.Fanout);
+        _channel.ExchangeDeclare(exchange: "preferences.submit", type: ExchangeType.Fanout); // Обмен для очереди preferences.submit
+    }
 
+    public void Publish<T>(string exchangeName, T message)
+    {
         var jsonMessage = JsonSerializer.Serialize(message);
         var body = Encoding.UTF8.GetBytes(jsonMessage);
 
-        _channel.BasicPublish(exchange: "",
-            routingKey: queueName,
-            basicProperties: null,
-            body: body);
+        // Публикация в указанный обмен
+        _channel.BasicPublish(exchange: exchangeName, routingKey: "", basicProperties: null, body: body);
     }
 
-    public void Consume<T>(string queueName, Func<T, Task> messageHandler)
+    public void Consume<T>(string queueName, string exchangeName, Func<T, Task> messageHandler, CancellationToken cancellationToken)
     {
-        _channel.QueueDeclare(queue: queueName,
-            durable: false,
-            exclusive: false,
-            autoDelete: false,
-            arguments: null);
+        // Объявление очереди
+        _channel.QueueDeclare(queue: queueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
+        
+        // Привязка очереди к обмену
+        _channel.QueueBind(queue: queueName, exchange: exchangeName, routingKey: "");
 
         var consumer = new EventingBasicConsumer(_channel);
         consumer.Received += async (model, ea) =>
@@ -65,30 +62,7 @@ public class RabbitMqService : IRabbitMqService
             }
         };
 
-        _channel.BasicConsume(queue: queueName,
-            autoAck: true,
-            consumer: consumer);
-    }
-
-    public void Consume<T>(string queueName, Func<T, Task> onMessageReceived,
-        CancellationToken cancellationToken)
-    {
-        var consumer = new EventingBasicConsumer(_channel);
-
-        consumer.Received += async (model, ea) =>
-        {
-            var body = ea.Body.ToArray();
-            var jsonMessage = Encoding.UTF8.GetString(body);
-            var message = JsonConvert.DeserializeObject<T>(jsonMessage);
-
-            if (message != null)
-            {
-                await onMessageReceived(message);
-            }
-        };
-
-        _channel.BasicConsume(queue: queueName, autoAck: true,
-            consumer: consumer);
+        _channel.BasicConsume(queue: queueName, autoAck: true, consumer: consumer);
     }
 
     public void Dispose()

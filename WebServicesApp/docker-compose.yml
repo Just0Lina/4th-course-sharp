@@ -1,11 +1,17 @@
 version: '3.8'
+#           docker rm -f $(docker ps -aq) && docker rmi -f $(docker images -q)
 
 services:
   rabbitmq:
     image: rabbitmq:management
     ports:
-      - "5672:5672"  
-      - "15672:15672" 
+      - "5673:5672"  
+      - "15673:15672" 
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - hackathon_net
   db:
@@ -37,8 +43,10 @@ services:
     deploy:
       replicas: 1
     depends_on:
-      - hr_director
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      hr_director:
+        condition: service_started
     networks:
       - hackathon_net
 
@@ -54,8 +62,10 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__HackathonDbContext="Host=db;Port=5432;Database=hackathon_db;Username=postgres;Password=postgres"
     depends_on:
-      - db
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
     deploy:
       replicas: 1
     networks:
@@ -70,8 +80,10 @@ services:
     deploy:
       replicas: 1
     depends_on:
-      - hr_manager
-      - rabbitmq 
+      rabbitmq:
+        condition: service_healthy
+      hr_manager:
+        condition: service_started
     environment:
       - RABBITMQ_HOST=rabbitmq  
       - RABBITMQ_QUEUE=preferences_queue
@@ -83,80 +95,80 @@ services:
     ports:
       - "${TEAMLEAD_1_PORT:-5001}:8080"
     environment:
-      - EMPLOYEE_TYPE=teamlead
-      - EMPLOYEE_ID=1
+      - EmployeeSettings__EmployeeType=teamlead
+      - EmployeeSettings__EmployeeId=1
 
   teamlead-2:
     <<: *employee-base
     ports:
       - "${TEAMLEAD_2_PORT:-5002}:8080"
     environment:
-      - EMPLOYEE_TYPE=teamlead
-      - EMPLOYEE_ID=2
+      - EmployeeSettings__EmployeeType=teamlead
+      - EmployeeSettings__EmployeeId=2
 
   teamlead-3:
     <<: *employee-base
     ports:
       - "${TEAMLEAD_3_PORT:-5003}:8080"
     environment:
-      - EMPLOYEE_TYPE=teamlead
-      - EMPLOYEE_ID=3
+      - EmployeeSettings__EmployeeType=teamlead
+      - EmployeeSettings__EmployeeId=3
 
   teamlead-4:
     <<: *employee-base
     ports:
       - "${TEAMLEAD_4_PORT:-5004}:8080"
     environment:
-      - EMPLOYEE_TYPE=teamlead
-      - EMPLOYEE_ID=4
+      - EmployeeSettings__EmployeeType=teamlead
+      - EmployeeSettings__EmployeeId=4
 
   teamlead-5:
     <<: *employee-base
     ports:
       - "${TEAMLEAD_5_PORT:-5005}:8080"
     environment:
-      - EMPLOYEE_TYPE=teamlead
-      - EMPLOYEE_ID=5
+      - EmployeeSettings__EmployeeType=teamlead
+      - EmployeeSettings__EmployeeId=5
 
   junior-1:
     <<: *employee-base
     ports:
       - "${JUNIOR_1_PORT:-6001}:8080"
     environment:
-      - EMPLOYEE_TYPE=junior
-      - EMPLOYEE_ID=1
+      - EmployeeSettings__EmployeeType=junior
+      - EmployeeSettings__EmployeeId=1
 
   junior-2:
     <<: *employee-base
     ports:
       - "${JUNIOR_2_PORT:-6002}:8080"
     environment:
-      - EMPLOYEE_TYPE=junior
-      - EMPLOYEE_ID=2
+      - EmployeeSettings__EmployeeType=junior
+      - EmployeeSettings__EmployeeId=2
 
   junior-3:
     <<: *employee-base
     ports:
       - "${JUNIOR_3_PORT:-6003}:8080"
     environment:
-      - EMPLOYEE_TYPE=junior
-      - EMPLOYEE_ID=3
+      - EmployeeSettings__EmployeeType=junior
+      - EmployeeSettings__EmployeeId=3
 
   junior-4:
     <<: *employee-base
     ports:
       - "${JUNIOR_4_PORT:-6004}:8080"
     environment:
-      - EMPLOYEE_TYPE=junior
-      - EMPLOYEE_ID=4
+      - EmployeeSettings__EmployeeType=junior
+      - EmployeeSettings__EmployeeId=4
 
   junior-5:
     <<: *employee-base
     ports:
       - "${JUNIOR_5_PORT:-6005}:8080"
     environment:
-      - EMPLOYEE_TYPE=junior
-      - EMPLOYEE_ID=5
+      - EmployeeSettings__EmployeeType=junior
+      - EmployeeSettings__EmployeeId=5
 
 networks:
   hackathon_net:

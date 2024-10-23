@@ -11,10 +11,8 @@ class Program02
     static void Main(string[] args)
     {
         using var host = Host.CreateDefaultBuilder(args).ConfigureLogging(
-                (context, logging) =>
+                (logging) =>
                 {
-                    var config = context.Configuration.GetSection("Logging");
-                    logging.AddConfiguration(config);
                     logging.AddConsole();
                     logging.AddFilter(
                         "Microsoft.EntityFrameworkCore.Database.Command",

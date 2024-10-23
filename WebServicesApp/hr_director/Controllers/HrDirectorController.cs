@@ -10,7 +10,8 @@ namespace Nsu.HackathonProblem.HrDirector.Controllers;
 [Route("api/hrdirector")]
 public class HrDirectorController(
     IHarmonyCalculationService harmonyService,
-    RabbitMqService _rabbitMqService)
+    RabbitMqService rabbitMqService,
+    ILogger<HrDirectorController> logger)
     : ControllerBase
 {
     [HttpPost("calculate-harmony")]
@@ -22,7 +23,7 @@ public class HrDirectorController(
         var teamLeadPreferences = teamsAndPreferencesEntity.TeamLeadPreferences;
         var harmonyIndex = harmonyService.CalculateHarmony(juniorPreferences,
             teamLeadPreferences, teams);
-        Console.WriteLine($"Harmony calculated: {harmonyIndex}");
+        logger.LogInformation($"Harmony calculated: {harmonyIndex}");
         await harmonyService.SaveHackathon(juniorPreferences,
             teamLeadPreferences,
             teams, harmonyIndex);
@@ -30,19 +31,25 @@ public class HrDirectorController(
         return Ok($"Harmony calculated: {harmonyIndex}");
     }
 
+    public class HackathonAnnouncementRequest
+    {
+        public long HackathonId { get; set; }
+    }
+
     [HttpPost("announce-hackathon")]
     public Task<IActionResult> AnnounceHackathon(
-        [FromBody] string hackathonId)
+        [FromBody] HackathonAnnouncementRequest request)
     {
         var message = new HackathonAnnouncementMessage
         {
-            HackathonId = hackathonId,
+            HackathonId = request.HackathonId,
             Message = "Hackathon has started!"
         };
 
         try
         {
-            _rabbitMqService.Publish("hackathon.start", message);
+            logger.LogInformation("Sending announcement message");
+            rabbitMqService.Publish("hackathon.start", message);
             return Task.FromResult<IActionResult>(
                 Ok("Hackathon announcement sent successfully."));
         }

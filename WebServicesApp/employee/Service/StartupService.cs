@@ -1,39 +1,41 @@
+using System.Text.Json;
 using Nsu.HackathonProblem.SharedData.Models;
 using Nsu.HackathonProblem.SharedData.Services;
-using Nsu.HackathonProblem.TeamLead.Service;
+using Nsu.HackathonProblem.TeamLead.Configurations;
+
+namespace Nsu.HackathonProblem.TeamLead.Service;
 
 public class StartupService(
-    IHttpClientFactory httpClientFactory,
     IPreferencesService preferencesService,
-    ILogger<StartupService> logger)
+    ILogger<StartupService> logger,
+    EmployeeSettings employeeSettings,
+    IRabbitMqService rabbitMqService)
     : IHostedService
 {
-    private const string EmployeeIdEnvVariable = "EMPLOYEE_ID";
-    private const string EmployeeTypeEnvVariable = "EMPLOYEE_TYPE";
-    private const string SubmitPreferencesUrlTemplate = "http://hr_manager:8080/api/hr/submit-{0}-preferences";
-
     public Task StartAsync(CancellationToken cancellationToken)
     {
         HackathonStartConsumer.HackathonStarted += OnHackathonStarted;
         return Task.CompletedTask;
     }
 
-    private async void OnHackathonStarted(HackathonAnnouncementMessage hackathonStartedEvent)
+    private const string SubmitPreferencesUrlTemplate =
+        "http://hr_manager:8080/api/hr/submit-{0}-preferences";
+
+    private async void OnHackathonStarted(
+        HackathonAnnouncementMessage hackathonStartedEvent)
     {
-        var cancellationToken = CancellationToken.None; // This may need to be handled differently based on your logic
+        var cancellationToken = CancellationToken.None;
 
-        var employeeType = GetEmployeeTypeFromEnvironment();
-        Console.WriteLine(employeeType);
+        var employeeType = employeeSettings.EmployeeType;
+        var employeeId = employeeSettings.EmployeeId;
 
-        var employeeId = GetEmployeeIdFromEnvironment();
-
-        if (employeeId == null || string.IsNullOrEmpty(employeeType))
+        if (string.IsNullOrEmpty(employeeType))
         {
-            logger.LogWarning("Invalid environment variables.");
+            logger.LogWarning("Invalid environment variables. ");
             return;
         }
 
-        var employee = await GetEmployeeAsync(employeeId.Value, employeeType);
+        var employee = await GetEmployeeAsync(employeeId, employeeType);
         if (employee == null)
         {
             logger.LogWarning("Employee not found.");
@@ -41,56 +43,51 @@ public class StartupService(
         }
 
         var employeePreferences = await GetTeamLeadsAsync();
-        var preferences = preferencesService.CreatePreferences(employee, employeePreferences);
-        await SubmitPreferencesAsync(employee, preferences, employeeType, cancellationToken);
+        var preferences =
+            preferencesService.CreatePreferences(employee, employeePreferences);
+        await SubmitPreferencesAsync(employee, preferences, employeeType,
+            cancellationToken);
     }
 
-    private string? GetEmployeeTypeFromEnvironment()
-    {
-        return Environment.GetEnvironmentVariable(EmployeeTypeEnvVariable);
-    }
 
-    private int? GetEmployeeIdFromEnvironment()
-    {
-        var employeeIdStr = Environment.GetEnvironmentVariable(EmployeeIdEnvVariable);
-        if (int.TryParse(employeeIdStr, out var employeeId))
-        {
-            return employeeId;
-        }
-
-        return null;
-    }
-
-    private async Task<Employee?> GetEmployeeAsync(int employeeId, string employeeType)
+    private async Task<Employee?> GetEmployeeAsync(int employeeId,
+        string employeeType)
     {
         if (employeeType == "teamlead")
         {
-            return DataService.ReadEmployeeById(DataService.JuniorsCsv, employeeId);
+            return DataService.ReadEmployeeById(DataService.JuniorsCsv,
+                employeeId);
         }
 
-        return DataService.ReadEmployeeById(DataService.teamLeadsCsv, employeeId);
+        return DataService.ReadEmployeeById(DataService.TeamLeadsCsv,
+            employeeId);
     }
 
     private async Task<List<Employee>> GetTeamLeadsAsync()
     {
-        return DataService.ReadEmployees(DataService.teamLeadsCsv);
+        return DataService.ReadEmployees(DataService.TeamLeadsCsv);
     }
 
-    private async Task SubmitPreferencesAsync(Employee employee, Wishlist preferences, string employeeType, CancellationToken cancellationToken)
+    private async Task SubmitPreferencesAsync(Employee employee,
+        Wishlist preferences, string employeeType,
+        CancellationToken cancellationToken)
     {
-        var request = new RequestToHr(employee, preferences);
-        var client = httpClientFactory.CreateClient();
-        var submitUrl = string.Format(SubmitPreferencesUrlTemplate, employeeType);
-
-        var response = await client.PostAsJsonAsync(submitUrl, request, cancellationToken);
-
-        if (response.IsSuccessStatusCode)
+        var preferencesMessage = new PreferencesMessage
         {
-            logger.LogInformation("Preferences submitted successfully.");
+            Employee = employee,
+            Preferences = preferences,
+            EmployeeType = employeeType
+        };
+        var preferencesJson = JsonSerializer.Serialize(preferencesMessage);
+        logger.LogInformation($"Received message: {preferencesJson}");
+        try
+        {
+            logger.LogInformation("Publishing preferences to RabbitMQ.");
+            rabbitMqService.Publish("preferences.submit", preferencesMessage);
         }
-        else
+        catch (Exception ex)
         {
-            logger.LogError($"Failed to submit preferences. Status code: {response.StatusCode}");
+            logger.LogError($"Failed to publish preferences: {ex.Message}");
         }
     }
 

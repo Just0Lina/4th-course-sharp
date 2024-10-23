@@ -11,16 +11,18 @@ public class HackathonStartConsumer(
     
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        rabbitMqService.Consume<HackathonAnnouncementMessage>("hackathon.start", async message =>
+
+        var queueName = $"hackathon.start.{Guid.NewGuid()}";
+        
+        rabbitMqService.Consume<HackathonAnnouncementMessage>(queueName, "hackathon.start", async message =>
         {
             var hackathonStartedEvent = new HackathonAnnouncementMessage
             {
                 HackathonId = message.HackathonId
             };
 
-            HackathonStarted?.Invoke(hackathonStartedEvent);
-
             logger.LogInformation($"Received hackathon start message: {message.Message}");
+            HackathonStarted?.Invoke(hackathonStartedEvent);
         }, stoppingToken);
 
         return Task.CompletedTask;
