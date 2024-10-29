@@ -4,10 +4,10 @@ namespace Nsu.HackathonProblem.HrDirector.Services;
 
 public interface IHarmonyCalculationService
 {
-    double CalculateHarmony(List<Wishlist> juniorPreferences,
-        List<Wishlist> teamLeadPreferences, List<Team> teams);
+    
 
-    Task SaveHackathon(List<Wishlist> juniorPreferences,
-        List<Wishlist> teamLeadPreferences, List<Team> teams,
-        double harmonyIndex);
+    Task<double> CalculateHarmonyAsync(List<Team> teams,
+        CancellationToken cancellationToken);
+
+    Task SaveHackathon(List<Team> teams, double harmonyIndex, int hackathonId);
 }

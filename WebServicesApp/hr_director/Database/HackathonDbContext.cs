@@ -28,7 +28,11 @@ public class HackathonDbContext(DbContextOptions<HackathonDbContext> options)
             .WithOne(t => t.Hackathon)
             .HasForeignKey(t => t.HackathonId)
             .OnDelete(DeleteBehavior.Cascade);
-
+        modelBuilder.Entity<HackathonEntity>(entity =>
+        {
+            entity.Property(e => e.Harmony)
+                .HasPrecision(18, 2); 
+        });
         base.OnModelCreating(modelBuilder);
     }
 

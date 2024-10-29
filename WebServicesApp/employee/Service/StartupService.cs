@@ -18,8 +18,6 @@ public class StartupService(
         return Task.CompletedTask;
     }
 
-    private const string SubmitPreferencesUrlTemplate =
-        "http://hr_manager:8080/api/hr/submit-{0}-preferences";
 
     private async void OnHackathonStarted(
         HackathonAnnouncementMessage hackathonStartedEvent)
@@ -46,6 +44,7 @@ public class StartupService(
         var preferences =
             preferencesService.CreatePreferences(employee, employeePreferences);
         await SubmitPreferencesAsync(employee, preferences, employeeType,
+            hackathonStartedEvent.HackathonId,
             cancellationToken);
     }
 
@@ -70,13 +69,15 @@ public class StartupService(
 
     private async Task SubmitPreferencesAsync(Employee employee,
         Wishlist preferences, string employeeType,
+        int hackathonId,
         CancellationToken cancellationToken)
     {
         var preferencesMessage = new PreferencesMessage
         {
             Employee = employee,
             Preferences = preferences,
-            EmployeeType = employeeType
+            EmployeeType = employeeType,
+            HackathonId = hackathonId
         };
         var preferencesJson = JsonSerializer.Serialize(preferencesMessage);
         logger.LogInformation($"Received message: {preferencesJson}");

@@ -17,12 +17,17 @@ var connectionString = configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-builder.Services.AddDbContext<HackathonDbContext>(options =>
-    options.UseNpgsql(connectionString).LogTo(Console.WriteLine, LogLevel.Warning));
-builder.Services
-    .AddScoped<IHarmonyCalculationService, HarmonyCalculationService>();
+
+builder.Services.AddDbContextFactory<HackathonDbContext>(options =>
+    options.UseNpgsql(connectionString), ServiceLifetime.Scoped);
+
+builder.Services.AddScoped<IHarmonyCalculationService, HarmonyCalculationService>();
 builder.Services.AddScoped<IHackathonRepository, HackathonRepository>();
 builder.Services.AddSingleton<IRabbitMqService, RabbitMqService>();
+
+builder.Services.AddScoped<RabbitMqService>();
+builder.Services.AddHttpContextAccessor(); 
+builder.Services.AddHostedService<PreferencesConsumer>();
 
 builder.Services.AddSingleton<IConnection>(provider =>
 {
@@ -36,18 +41,13 @@ builder.Services.AddSingleton<IModel>(provider =>
     return connection.CreateModel();
 });
 
-builder.Services.AddScoped<RabbitMqService>();
-
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-    app.ApplyMigrations(); 
+    app.ApplyMigrations();
 }
-
-
 
 app.UseRouting();
 

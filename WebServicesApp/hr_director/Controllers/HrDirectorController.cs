@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Nsu.HackathonProblem.HrDirector.Repository;
 using Nsu.HackathonProblem.HrDirector.Services;
 using Nsu.HackathonProblem.SharedData.Models;
 using Nsu.HackathonProblem.SharedData.Services;
-using Nsu.HackathonProblem.TeamLead.Service;
 
 namespace Nsu.HackathonProblem.HrDirector.Controllers;
 
@@ -11,35 +11,39 @@ namespace Nsu.HackathonProblem.HrDirector.Controllers;
 public class HrDirectorController(
     IHarmonyCalculationService harmonyService,
     RabbitMqService rabbitMqService,
-    ILogger<HrDirectorController> logger)
+    ILogger<HrDirectorController> logger,
+    IHackathonRepository hackathonRepository)
     : ControllerBase
 {
     [HttpPost("calculate-harmony")]
     public async Task<IActionResult> CalculateHarmony(
-        TeamsAndPreferencesEntity teamsAndPreferencesEntity)
+        TeamsAndPreferencesEntity teamsAndPreferencesEntity,
+        CancellationToken cancellationToken)
     {
+        logger.LogInformation($"id: {teamsAndPreferencesEntity.HackathonId}");
+
+        Console.WriteLine("Calculating harmony for the teams and references");
         var teams = teamsAndPreferencesEntity.Teams;
-        var juniorPreferences = teamsAndPreferencesEntity.JuniorPreferences;
-        var teamLeadPreferences = teamsAndPreferencesEntity.TeamLeadPreferences;
-        var harmonyIndex = harmonyService.CalculateHarmony(juniorPreferences,
-            teamLeadPreferences, teams);
+        var harmonyIndex = await harmonyService.CalculateHarmonyAsync( teams, cancellationToken);
         logger.LogInformation($"Harmony calculated: {harmonyIndex}");
-        await harmonyService.SaveHackathon(juniorPreferences,
-            teamLeadPreferences,
-            teams, harmonyIndex);
+        logger.LogInformation($"id: {teamsAndPreferencesEntity.HackathonId}");
+
+        await harmonyService.SaveHackathon(
+            teams, harmonyIndex, teamsAndPreferencesEntity.HackathonId);
 
         return Ok($"Harmony calculated: {harmonyIndex}");
     }
 
     public class HackathonAnnouncementRequest
     {
-        public long HackathonId { get; set; }
+        public int HackathonId { get; set; }
     }
 
     [HttpPost("announce-hackathon")]
-    public Task<IActionResult> AnnounceHackathon(
+    public async Task<IActionResult> AnnounceHackathon(
         [FromBody] HackathonAnnouncementRequest request)
     {
+        rabbitMqService.DeleteQueues();
         var message = new HackathonAnnouncementMessage
         {
             HackathonId = request.HackathonId,
@@ -48,15 +52,28 @@ public class HrDirectorController(
 
         try
         {
-            logger.LogInformation("Sending announcement message");
+            if (await hackathonRepository.GetHackathonByIdAsync(
+                    request.HackathonId) is null)
+            {
+                await hackathonRepository.SaveHackathonIdAsync(
+                    request.HackathonId);
+            }
+            else
+            {
+                await hackathonRepository.ClearPreferencesAndTeamsForHackathonIdAsync(
+                    request.HackathonId);
+            }
+
+            logger.LogInformation($"Sending announcement message {message}");
             rabbitMqService.Publish("hackathon.start", message);
-            return Task.FromResult<IActionResult>(
-                Ok("Hackathon announcement sent successfully."));
+
+            return
+                Ok("Hackathon announcement sent successfully.");
         }
         catch (Exception ex)
         {
-            return Task.FromResult<IActionResult>(StatusCode(500,
-                $"Failed to send announcement: {ex.Message}"));
+            return StatusCode(500,
+                $"Failed to send announcement: {ex.Message}");
         }
     }
 }

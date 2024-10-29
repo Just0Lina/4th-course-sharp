@@ -7,7 +7,7 @@ public static class MigrationExtensions
 {
     public static void ApplyMigrations(this IApplicationBuilder app)
     {
-        using var scope = app.ApplicationServices.CreateScope();
+        var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
         var dbContext =
             scope.ServiceProvider.GetRequiredService<HackathonDbContext>();
         dbContext.Database.Migrate();

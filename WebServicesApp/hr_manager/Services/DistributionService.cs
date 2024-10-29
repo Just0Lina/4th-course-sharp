@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using Nsu.HackathonProblem.SharedData.Models;
+using RabbitMQ.Client.Exceptions;
 
 namespace Nsu.HackathonProblem.HrManager.Services
 {
@@ -19,6 +21,7 @@ namespace Nsu.HackathonProblem.HrManager.Services
         private bool _finalDistributionSent = false;
 
         private List<Team> _teams;
+        private int HackathonId;
 
         public DistributionService(ITeamBuildingStrategy teamBuildingStrategy,
             IHttpClientFactory httpClientFactory,
@@ -32,13 +35,14 @@ namespace Nsu.HackathonProblem.HrManager.Services
             {
                 if (_finalDistributionSent || !AllRequestsReceived()) return;
                 _finalDistributionSent = true;
-                await SendFinalDistribution();
+                await SendFinalDistribution(HackathonId);
             };
         }
 
         private bool AllRequestsReceived()
         {
-            return _juniorPreferences.Count >= 5 && _teamLeadPreferences.Count >= 5;
+            return _juniorPreferences.Count >= 5 &&
+                   _teamLeadPreferences.Count >= 5;
         }
 
         public void SaveJuniorPreferences(RequestToHr request)
@@ -46,6 +50,11 @@ namespace Nsu.HackathonProblem.HrManager.Services
             _juniorPreferences.Add(request.Wishlist);
             _juniors.Add(request.Employee);
             CheckIfAllPreferencesReceived();
+        }
+
+        public void SetHackathonId(int messageHackathonId)
+        {
+            HackathonId = messageHackathonId;
         }
 
         public void SaveTeamLeadPreferences(RequestToHr request)
@@ -69,70 +78,80 @@ namespace Nsu.HackathonProblem.HrManager.Services
             _logger.LogInformation(
                 $"Junior Preferences: {_juniorPreferences.Count}, Team Lead Preferences: {_teamLeadPreferences.Count}");
 
-            if (_juniorPreferences.Count < 5 || _teamLeadPreferences.Count < 5) return;
+            if (_juniorPreferences.Count < 5 ||
+                _teamLeadPreferences.Count < 5) return;
 
-            _logger.LogInformation("All preferences received, triggering OnAllPreferencesReceived event.");
+            _logger.LogInformation(
+                "All preferences received, triggering OnAllPreferencesReceived event.");
+            object hackathonId;
             OnAllPreferencesReceived?.Invoke();
         }
 
-        private TeamsAndPreferencesEntity GetAllPreferencesAsync()
+        private TeamsAndPreferencesEntity GetAllPreferencesAsync(int hackathonId)
         {
             var teams = BuildTeams();
             _logger.LogInformation("Current Teams:");
             foreach (var team in teams)
             {
-                _logger.LogInformation($"Team Lead: {team.TeamLead.Name}, Junior: {team.Junior.Name}");
+                _logger.LogInformation(
+                    $"Team Lead: {team.TeamLead.Name}, Junior: {team.Junior.Name}");
             }
 
-            return new TeamsAndPreferencesEntity(_juniorPreferences.ToList(),
-                _teamLeadPreferences.ToList(),
-                teams);
+            return new TeamsAndPreferencesEntity(teams, hackathonId);
         }
 
-        private async Task<IActionResult> SendFinalDistribution()
+        private void ClearAllPreferences()
         {
-            var retryCount = 5;
-            var delay = 2000;
+            _finalDistributionSent = false;
+            _juniors.Clear();
+            _teams.Clear();
+            _teamLeads.Clear();
+            _teamLeadPreferences.Clear();
+            _juniorPreferences.Clear();
+            
+        }
 
-            for (var i = 0; i < retryCount; i++)
+        private async Task<IActionResult> SendFinalDistribution(int hackathonId)
+        {
+            _logger.LogInformation($"Sending final distribution... {hackathonId}");
+
+            var allPreferences =
+                GetAllPreferencesAsync(hackathonId);
+            _logger.LogInformation($"local preferences sent to {allPreferences.HackathonId}");
+            var client = _httpClientFactory.CreateClient();
+
+            try
             {
-                try
+                var response = await client.PostAsJsonAsync(
+                    "http://hr_director:8080/api/hrdirector/calculate-harmony",
+                    allPreferences);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation("Sending final distribution...");
-
-                    var allPreferences = GetAllPreferencesAsync();
-                    var client = _httpClientFactory.CreateClient();
-
-                    try
-                    {
-                        var response = await client.PostAsJsonAsync(
-                            "http://hr_director:8080/api/hrdirector/calculate-harmony",
-                            allPreferences);
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            _logger.LogInformation("Distribution sent successfully.");
-                            return new OkObjectResult("Distribution sent successfully to HR Director.");
-                        }
-
-                        _logger.LogWarning($"Failed to send distribution. Status code: {response.StatusCode}");
-                        return new StatusCodeResult((int)response.StatusCode);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"Request failed: {ex.Message}. Retrying in {delay / 1000} seconds...");
-                        await Task.Delay(delay);
-                    }
+                    _logger.LogInformation("Distribution sent successfully.");
+                    ClearAllPreferences();
+                    return new OkObjectResult(
+                        "Distribution sent successfully to HR Director.");
                 }
-                catch (HttpRequestException ex)
-                {
-                    _logger.LogError(ex, $"Error during sending final distribution: {ex.Message}");
-                    return new StatusCodeResult(500);
-                }
+
+                ClearAllPreferences();
+                _logger.LogWarning(
+                    $"Failed to send distribution. Status code: {response.StatusCode}");
+                return new StatusCodeResult((int)response.StatusCode);
             }
-
-            _logger.LogError("Failed to send final distribution after multiple attempts.");
-            return new StatusCodeResult(500);
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex,
+                    $"Error during sending final distribution: {ex.Message}");
+                ClearAllPreferences();
+                return new StatusCodeResult(500);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Request failed: {ex.Message}");
+                ClearAllPreferences();
+                return new StatusCodeResult(500);
+            }
         }
     }
 }

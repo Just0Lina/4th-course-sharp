@@ -1,10 +1,8 @@
 namespace Nsu.HackathonProblem.SharedData.Models;
+
 public class TeamsAndPreferencesEntity(
-   List<Wishlist> juniorPreferences,
-   List<Wishlist> teamLeadPreferences,
-   List<Team> teams)
+    List<Team> teams, int HackathonId)
 {
-   public List<Wishlist> JuniorPreferences { get; init; } = juniorPreferences;
-   public List<Wishlist> TeamLeadPreferences { get; init; } = teamLeadPreferences;
-   public List<Team> Teams { get; init; } = teams;
+    public List<Team> Teams { get; init; } = teams;
+    public int HackathonId { get; set; } = HackathonId;
 }

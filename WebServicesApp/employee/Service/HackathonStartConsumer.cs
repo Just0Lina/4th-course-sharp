@@ -1,3 +1,4 @@
+using Nsu.HackathonProblem.SharedData.Models;
 using Nsu.HackathonProblem.SharedData.Services;
 
 namespace Nsu.HackathonProblem.TeamLead.Service;
@@ -23,6 +24,8 @@ public class HackathonStartConsumer(
 
             logger.LogInformation($"Received hackathon start message: {message.Message}");
             HackathonStarted?.Invoke(hackathonStartedEvent);
+            
+            
         }, stoppingToken);
 
         return Task.CompletedTask;

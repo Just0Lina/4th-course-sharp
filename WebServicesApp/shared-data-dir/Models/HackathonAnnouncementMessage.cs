@@ -1,7 +1,7 @@
-namespace Nsu.HackathonProblem.TeamLead.Service;
+namespace Nsu.HackathonProblem.SharedData.Models;
 
 public class HackathonAnnouncementMessage
 {
-    public long HackathonId { get; set; }
+    public int HackathonId { get; set; }
     public string Message { get; set; }
 }

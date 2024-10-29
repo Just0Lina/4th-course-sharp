@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Nsu.HackathonProblem.SharedData.Models;
 using Nsu.HackathonProblem.SharedData.Services;
-using RabbitMQ.Client.Events;
 
 namespace Nsu.HackathonProblem.HrManager.Services;
 
@@ -14,23 +13,29 @@ public class PreferencesConsumer(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        rabbitMqService.Consume<PreferencesMessage>("preferences.submit", "preferences.submit",
+        var queueName = $"preferences.submit.{Guid.NewGuid()}";
+
+        rabbitMqService.Consume<PreferencesMessage>(queueName,
+            "preferences.submit",
             HandlePreferencesAsync, stoppingToken);
     }
 
     private async Task HandlePreferencesAsync(PreferencesMessage message)
     {
+        distributionService.SetHackathonId(message.HackathonId);
+
         if (message.EmployeeType == "junior")
         {
-            distributionService.SaveJuniorPreferences(new RequestToHr(message.Employee, message.Preferences));
+            distributionService.SaveJuniorPreferences(
+                new RequestToHr(message.Employee, message.Preferences));
         }
         else if (message.EmployeeType == "teamlead")
         {
             distributionService.SaveTeamLeadPreferences(
                 new RequestToHr(message.Employee, message.Preferences));
         }
-        
-        logger.LogInformation($"Received message: {JsonSerializer.Serialize(message)}");
 
+        logger.LogInformation(
+            $"Received message: {JsonSerializer.Serialize(message)}");
     }
 }
