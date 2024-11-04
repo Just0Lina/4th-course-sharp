@@ -3,71 +3,16 @@ using Nsu.HackathonProblem.SharedData.Models;
 
 namespace Nsu.HackathonProblem.HrDirector.Services;
 
-public class HarmonyCalculationService : IHarmonyCalculationService
+public class HarmonyCalculationService(
+    IHackathonRepository hackathonRepository,
+    IServiceScopeFactory contextFactory,
+    ILogger<HarmonyCalculationService> logger)
+    : IHarmonyCalculationService
 {
-    private readonly IHackathonRepository _hackathonRepository;
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<HarmonyCalculationService> _logger;
-
-    private int _hackathonId;
-    private bool _isSubscribed = false;
-
-
-    public HarmonyCalculationService(IHackathonRepository hackathonRepository,
-        IServiceScopeFactory contextFactory,
-        ILogger<HarmonyCalculationService> logger)
-    {
-        _hackathonRepository = hackathonRepository;
-        _scopeFactory = contextFactory;
-        _logger = logger;
-
-
-        SubscribeToPreferencesReceived();
-    }
-    private void SubscribeToPreferencesReceived()
-    {
-        if (!_isSubscribed)
-        {
-            PreferencesConsumer.PreferencesReceivedTcs += GetPreferencesConsumer;
-            _isSubscribed = true; 
-        }
-    }
-    private bool _isProcessing = false;
-
-    private async void GetPreferencesConsumer(PreferencesMessage message)
-    {
-        if (_isProcessing)
-        {
-            _logger.LogInformation(
-                "Ignoring duplicate HackathonStarted event.");
-            return;
-        }
-
-        _isProcessing = true;
-        if (_hackathonRepository.AllRequestsReceived()) return;
-        try
-        {
-            _hackathonId = message.HackathonId;
-            if (message.EmployeeType == "junior")
-            {
-                await _hackathonRepository.SaveJuniorPreferences(_hackathonId,
-                    message.Preferences);
-            }
-            else if (message.EmployeeType == "teamlead")
-            {
-                await _hackathonRepository.SaveTeamLeadPreferences(_hackathonId,
-                    message.Preferences);
-            }
-        }
-        finally
-        {
-            _isProcessing = false;
-        }
-    }
 
     private async Task<bool> CheckPreferencesCountAsync(int hackathonId)
     {
-        using var scope = _scopeFactory.CreateScope();
+        using var scope = contextFactory.CreateScope();
         var repository = scope.ServiceProvider
             .GetRequiredService<IHackathonRepository>();
 
@@ -78,7 +23,7 @@ public class HarmonyCalculationService : IHarmonyCalculationService
         var teamLeadCount =
             await repository.GetPreferencesCountAsync(hackathonId,
                 Role.TeamLead);
-        _logger.LogInformation($"junior count: {juniorCount}, team lead count: {teamLeadCount}, hackathonId: {hackathonId}");
+        logger.LogDebug($"junior count: {juniorCount}, team lead count: {teamLeadCount}, hackathonId: {hackathonId}");
 
         return juniorCount >= 25 && teamLeadCount >= 25;
     }
@@ -93,9 +38,9 @@ public class HarmonyCalculationService : IHarmonyCalculationService
         }
         
         var juniorWishlistsAsync =
-            await _hackathonRepository.GetJuniorWishlistsAsync(hackathonId);
+            await hackathonRepository.GetJuniorWishlistsAsync(hackathonId);
 
-        var teamLeadsWishlistsAsync = await _hackathonRepository
+        var teamLeadsWishlistsAsync = await hackathonRepository
             .GetTeamLeadWishlistsAsync(hackathonId);
 
         return CalculateHarmony(juniorWishlistsAsync.ToList(),
@@ -143,10 +88,10 @@ public class HarmonyCalculationService : IHarmonyCalculationService
             TeamLeadId = t.TeamLead.Id,
             JuniorId = t.Junior.Id
         }).ToList();
-        await _hackathonRepository.UpdateHackathonAsync(
+        await hackathonRepository.UpdateHackathonAsync(
             (decimal)harmonyIndex,
             teamEntities, hackathonId);
 
-        await _hackathonRepository.SaveEmployeesAsync(teams);
+        await hackathonRepository.SaveEmployeesAsync(teams);
     }
 }

@@ -7,5 +7,5 @@ public interface IDistributionService
     void SaveTeamLeadPreferences(RequestToHr preferences);
     void SaveJuniorPreferences(RequestToHr preferences);
     void SetHackathonId(int messageHackathonId);
-    Boolean AllRequestsReceived();
+    bool AllRequestsReceived();
 }

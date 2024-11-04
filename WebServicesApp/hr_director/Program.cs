@@ -20,7 +20,6 @@ var connectionString = configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-
 builder.Services.AddDbContextFactory<HackathonDbContext>(options =>
     options.UseNpgsql(connectionString), ServiceLifetime.Scoped);
 

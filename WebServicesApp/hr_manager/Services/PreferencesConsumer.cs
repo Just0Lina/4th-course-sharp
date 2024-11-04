@@ -29,7 +29,7 @@ public class PreferencesMessageConsumer(
                 new RequestToHr(message.Employee, message.Preferences));
         }
 
-        logger.LogInformation(
+        logger.LogDebug(
             $"Received message: {JsonSerializer.Serialize(message)}");
     }
 }

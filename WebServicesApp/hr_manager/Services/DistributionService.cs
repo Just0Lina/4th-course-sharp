@@ -75,25 +75,23 @@ namespace Nsu.HackathonProblem.HrManager.Services
 
         private void CheckIfAllPreferencesReceived()
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 $"Junior Preferences: {_juniorPreferences.Count}, Team Lead Preferences: {_teamLeadPreferences.Count}");
 
-            if (_juniorPreferences.Count < 5 ||
-                _teamLeadPreferences.Count < 5) return;
+            if (!AllRequestsReceived()) return;
 
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "All preferences received, triggering OnAllPreferencesReceived event.");
-            object hackathonId;
             OnAllPreferencesReceived?.Invoke();
         }
 
         private TeamsAndPreferencesEntity GetAllPreferencesAsync(int hackathonId)
         {
             var teams = BuildTeams();
-            _logger.LogInformation("Current Teams:");
+            _logger.LogDebug("Current Teams:");
             foreach (var team in teams)
             {
-                _logger.LogInformation(
+                _logger.LogDebug(
                     $"Team Lead: {team.TeamLead.Name}, Junior: {team.Junior.Name}");
             }
 
@@ -108,17 +106,14 @@ namespace Nsu.HackathonProblem.HrManager.Services
             _teamLeads.Clear();
             _teamLeadPreferences.Clear();
             _juniorPreferences.Clear();
-            
-
         }
 
         private async Task<IActionResult> SendFinalDistribution(int hackathonId)
         {
-            _logger.LogInformation($"Sending final distribution... {hackathonId}");
+            _logger.LogDebug($"Sending final distribution... {hackathonId}");
 
             var allPreferences =
                 GetAllPreferencesAsync(hackathonId);
-            _logger.LogInformation($"local preferences sent to {allPreferences.HackathonId}");
             var client = _httpClientFactory.CreateClient();
 
             try

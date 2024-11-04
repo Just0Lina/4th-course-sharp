@@ -15,8 +15,7 @@ public interface IHackathonRepository
     Task<IEnumerable<Wishlist>> GetJuniorWishlistsAsync(int hackathonId);
     Task<int> GetPreferencesCountAsync(int hackathonId, Role junior);
     Task ClearPreferencesAndTeamsForHackathonIdAsync(int requestHackathonId);
-    Task SaveJuniorPreferences(int hackathonId, Wishlist messagePreferences);
+    Task<double> CalculateAverageHarmonyAsync();
 
-    Task SaveTeamLeadPreferences(int hackathonId, Wishlist messagePreferences);
-    bool AllRequestsReceived();
+    Task SavePreferencesToDatabaseAsync(PreferencesMessage message);
 }

@@ -72,6 +72,7 @@ public class HrDirectorController(
                     ctx.SetRoutingKey(
                         "hackathonExchange"); 
                 });
+            logger.LogInformation($"Average hackathons harmony: {hackathonRepository.CalculateAverageHarmonyAsync()}");
             return Ok("Hackathon announcement sent successfully.");
         }
         catch (Exception ex)
@@ -80,5 +81,6 @@ public class HrDirectorController(
             return StatusCode(500,
                 $"Failed to send announcement: {ex.Message}");
         }
+
     }
 }
