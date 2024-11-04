@@ -12,8 +12,12 @@ namespace Nsu.HackathonProblem.HrManager.Services
         {
             var freeJuniors = new HashSet<Wishlist>(juniorsWishlists);
             var teamLeadMatches = new Dictionary<int, int>();
-            var juniorProposals = juniorsWishlists.ToDictionary(jp => jp.EmployeeId, jp => new Queue<int>(jp.DesiredEmployees));
-
+            var juniorProposals = juniorsWishlists
+                .GroupBy(jp => jp.EmployeeId) 
+                .ToDictionary(
+                    group => group.Key,
+                    group => new Queue<int>(group.SelectMany(jp => jp.DesiredEmployees).Distinct())
+                );
             while (freeJuniors.Count > 0)
             {
                 var currentJuniorWishlist = freeJuniors.First();

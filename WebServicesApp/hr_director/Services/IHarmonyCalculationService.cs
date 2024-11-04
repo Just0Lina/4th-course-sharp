@@ -7,7 +7,7 @@ public interface IHarmonyCalculationService
     
 
     Task<double> CalculateHarmonyAsync(List<Team> teams,
-        CancellationToken cancellationToken);
+        int hackathonId);
 
     Task SaveHackathon(List<Team> teams, double harmonyIndex, int hackathonId);
 }

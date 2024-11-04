@@ -1,45 +1,47 @@
+using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Nsu.HackathonProblem.HrDirector.Database;
 using Nsu.HackathonProblem.SharedData.Models;
 
 namespace Nsu.HackathonProblem.HrDirector.Repository;
 
-public class HackathonRepository(
-    ILogger<HackathonRepository> _logger,
-    IServiceScopeFactory _serviceScopeFactory)
-    : IHackathonRepository
+public class HackathonRepository : IHackathonRepository
 {
-    public async Task AddHackathonAsync(HackathonEntity hackathon)
+    private ConcurrentBag<Wishlist> _juniorPreferences = new();
+    private ConcurrentBag<Wishlist> _teamLeadPreferences = new();
+    public event Action OnAllPreferencesReceived;
+    private int hackathonId;
+    private readonly ILogger<HackathonRepository> _logger;
+    private readonly IServiceScopeFactory _serviceScopeFactory1;
+
+    public HackathonRepository(ILogger<HackathonRepository> logger,
+        IServiceScopeFactory serviceScopeFactory)
     {
-        try
+        _logger = logger;
+        _serviceScopeFactory1 = serviceScopeFactory;
+        OnAllPreferencesReceived += async () =>
         {
-            _logger.LogInformation("Adding hackathon");
-            using var scope = _serviceScopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetService<HackathonDbContext>();
-            db.Hackathons.Add(hackathon);
-            await db.SaveChangesAsync();
-            _logger.LogInformation($"Inserted Hackathon ID: {hackathon.Id}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogInformation($"Error saving hackathon: {ex.Message}");
-        }
+            await SavePreferenceAsync();
+        };
     }
+    
 
     public async Task UpdateHackathonAsync(decimal harmony,
         List<TeamEntity> teams, int hackathonId)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        using var scope = _serviceScopeFactory1.CreateScope();
         var db = scope.ServiceProvider.GetService<HackathonDbContext>();
-        var hackathon = await GetLatestHackathonAsync(hackathonId);
+        var hackathon = await GetLatestHackathonAsync(hackathonId, db);
         if (hackathon == null)
         {
-            throw new InvalidOperationException($"Hackathon with ID {hackathonId} not found.");
+            throw new InvalidOperationException(
+                $"Hackathon with ID {hackathonId} not found.");
         }
-        if (hackathon.Teams == null)
-        {
-            hackathon.Teams = new List<TeamEntity>();
-        }
+        _logger.LogInformation($"hackathonId: {hackathonId}, harmonyIndex: {harmony}");
+
+        hackathon.Teams.Clear();
+        hackathon.Teams.AddRange(teams);
         hackathon.Teams = teams;
         hackathon.Harmony = harmony;
 
@@ -49,7 +51,7 @@ public class HackathonRepository(
     public async Task<IEnumerable<Wishlist>> GetJuniorWishlistsAsync(
         int hackathonId)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        using var scope = _serviceScopeFactory1.CreateScope();
         var db = scope.ServiceProvider.GetService<HackathonDbContext>();
 
         var juniorPreferences = await db.EmployeePreferences
@@ -63,18 +65,18 @@ public class HackathonRepository(
 
     public async Task<int> GetPreferencesCountAsync(int hackathonId, Role role)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        using var scope = _serviceScopeFactory1.CreateScope();
         var db = scope.ServiceProvider.GetService<HackathonDbContext>();
         return await db.EmployeePreferences
             .Where(p => p.HackathonId == hackathonId && p.Role == role)
             .CountAsync();
     }
-    
+
 
     public async Task ClearPreferencesAndTeamsForHackathonIdAsync(
         int hackathonId)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        using var scope = _serviceScopeFactory1.CreateScope();
         var db = scope.ServiceProvider.GetService<HackathonDbContext>();
         var preferences =
             db.EmployeePreferences.Where(p => p.HackathonId == hackathonId);
@@ -108,7 +110,7 @@ public class HackathonRepository(
     public async Task<IEnumerable<Wishlist>> GetTeamLeadWishlistsAsync(
         int hackathonId)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        using var scope = _serviceScopeFactory1.CreateScope();
         var db = scope.ServiceProvider.GetService<HackathonDbContext>();
 
 
@@ -123,34 +125,140 @@ public class HackathonRepository(
     }
 
 
-    public async Task SavePreferenceAsync(Role role, int hackathonId,
-        Wishlist preference)
+    public async Task SaveJuniorPreferences(int hackathonId, Wishlist wishlist)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        _juniorPreferences.Add(wishlist);
+        this.hackathonId = hackathonId;
+        CheckIfAllPreferencesReceived();
+    }
+
+    public async Task SaveTeamLeadPreferences(int hackathonId,
+        Wishlist wishlist)
+    {
+        _teamLeadPreferences.Add(wishlist);
+        this.hackathonId = hackathonId;
+        CheckIfAllPreferencesReceived();
+    }
+
+    public bool AllRequestsReceived()
+    {
+        return _juniorPreferences.Count >= 5 &&
+               _teamLeadPreferences.Count >= 5;
+    }
+
+    private void CheckIfAllPreferencesReceived()
+    {
+        _logger.LogInformation(
+            $"Junior Preferences: {_juniorPreferences.Count}, Team Lead Preferences: {_teamLeadPreferences.Count}");
+
+        if (_juniorPreferences.Count < 5 ||
+            _teamLeadPreferences.Count < 5) return;
+
+        _logger.LogInformation(
+            "All preferences received, triggering OnAllPreferencesReceived event.");
+        OnAllPreferencesReceived?.Invoke();
+    }
+
+
+    private async Task SavePreferenceAsync()
+    {
+        using var scope = _serviceScopeFactory1.CreateScope();
         var db = scope.ServiceProvider.GetService<HackathonDbContext>();
-        for (var index = 0; index < preference.DesiredEmployees.Length; index++)
+
+        var uniquePreferences =
+            new HashSet<(int EmployeeId, int PreferredEmployeeId, Role Role)>();
+        var preferences = new List<EmployeePreferenceEntity>();
+        foreach (var preference in _juniorPreferences)
         {
-            var pref = preference.DesiredEmployees[index];
-            var preferenceEntity = new EmployeePreferenceEntity
+            var role = Role.Junior;
+            for (var index = 0;
+                 index < preference.DesiredEmployees.Length;
+                 index++)
+            {
+                await SavePreferenses(preference, index, role, db,
+                    uniquePreferences, preferences);
+            }
+        }
+
+        foreach (var preference in _teamLeadPreferences)
+        {
+            var role = Role.TeamLead;
+            for (var index = 0;
+                 index < preference.DesiredEmployees.Length;
+                 index++)
+            {
+                await SavePreferenses(preference, index, role, db,
+                    uniquePreferences, preferences);
+            }
+        }
+
+        try
+        {
+            foreach (var pref in preferences)
+            {
+                if (!db.Entry(pref).State.HasFlag(EntityState.Detached))
+                {
+                    db.Entry(pref).State =
+                        EntityState
+                            .Added;
+                }
+            }
+
+            if (preferences.Count > 0)
+            {
+                foreach (var preference1 in preferences)
+                {
+                    _logger.LogInformation(
+                        $"Preferences added: {preference1.EmployeeId} {preference1.PreferredEmployeeId} {preference1.Role}");
+                }
+                await db.EmployeePreferences.AddRangeAsync(preferences);
+                await db.SaveChangesAsync();
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError("Entity tracking issue: {Message}", ex.Message);
+        }
+    }
+
+    private async Task SavePreferenses(Wishlist preference, int index,
+        Role role,
+        HackathonDbContext? db,
+        HashSet<(int EmployeeId, int PreferredEmployeeId, Role Role)>
+            uniquePreferences, List<EmployeePreferenceEntity> preferences)
+    {
+        var pref = preference.DesiredEmployees[index];
+        var key = (preference.EmployeeId, pref, role);
+        var existingPreference = await db.EmployeePreferences
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ep =>
+                ep.EmployeeId == preference.EmployeeId &&
+                ep.HackathonId == hackathonId &&
+                ep.PreferredEmployeeId == pref &&
+                ep.Role == role);
+        if (!uniquePreferences.Contains(key) &&
+            existingPreference == null)
+        {
+            uniquePreferences.Add(key);
+
+            preferences.Add(new EmployeePreferenceEntity
             {
                 HackathonId = hackathonId,
                 EmployeeId = preference.EmployeeId,
                 PreferredEmployeeId = pref,
                 Priority = index,
                 Role = role
-            };
+            });
 
-            db.EmployeePreferences.Add(preferenceEntity);
-            Console.WriteLine(
-                $"Added preference for EmployeeId: {hackathonId} {role} {preference.EmployeeId}, PreferredEmployeeId: {pref}, Priority: {index}");
+            _logger.LogInformation(
+                $"Adding preference for EmployeeId: {hackathonId} {role} {preference.EmployeeId}, PreferredEmployeeId: {pref}, Priority: {index}");
         }
-
-        await db.SaveChangesAsync();
     }
+
 
     public async Task<HackathonEntity?> GetHackathonByIdAsync(int hackathonId)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        using var scope = _serviceScopeFactory1.CreateScope();
         var db = scope.ServiceProvider.GetService<HackathonDbContext>();
         return await db.Hackathons
             .Include(h => h.Teams)
@@ -159,14 +267,14 @@ public class HackathonRepository(
 
     public async Task<IEnumerable<HackathonEntity>> GetAllHackathonsAsync()
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        using var scope = _serviceScopeFactory1.CreateScope();
         var db = scope.ServiceProvider.GetService<HackathonDbContext>();
         return await db.Hackathons.ToListAsync();
     }
 
     public async Task<double> CalculateAverageHarmonyAsync()
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        using var scope = _serviceScopeFactory1.CreateScope();
         var db = scope.ServiceProvider.GetService<HackathonDbContext>();
         var harmonies = await db.Hackathons
             .Select(h => h.Harmony)
@@ -177,7 +285,7 @@ public class HackathonRepository(
 
     public async Task SaveEmployeesAsync(List<Team> teams)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        using var scope = _serviceScopeFactory1.CreateScope();
         var db = scope.ServiceProvider.GetService<HackathonDbContext>();
         foreach (var team in teams)
         {
@@ -226,19 +334,16 @@ public class HackathonRepository(
 
     public async Task SaveHackathonIdAsync(int hackathonId)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        using var scope = _serviceScopeFactory1.CreateScope();
         var db = scope.ServiceProvider.GetService<HackathonDbContext>();
         var hackathonEntity = new HackathonEntity { Id = hackathonId };
         db.Hackathons.Add(hackathonEntity);
         await db.SaveChangesAsync();
     }
-    
-    public async Task<HackathonEntity> GetLatestHackathonAsync(int hackathonId)
+
+    public async Task<HackathonEntity> GetLatestHackathonAsync(int hackathonId, HackathonDbContext db)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetService<HackathonDbContext>();
         return await db.Hackathons
             .Include(h => h.Teams)
-            .FirstOrDefaultAsync(h => h.Id == hackathonId);
-    }
+            .FirstOrDefaultAsync(h => h.Id == hackathonId); }
 }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MassTransit;
 using Nsu.HackathonProblem.SharedData.Models;
 using Nsu.HackathonProblem.SharedData.Services;
 using Nsu.HackathonProblem.TeamLead.Configurations;
@@ -9,45 +10,61 @@ public class StartupService(
     IPreferencesService preferencesService,
     ILogger<StartupService> logger,
     EmployeeSettings employeeSettings,
-    IRabbitMqService rabbitMqService)
+    IServiceProvider serviceProvider,
+    HackathonStartConsumer hackathonStartConsumer)
     : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        HackathonStartConsumer.HackathonStarted += OnHackathonStarted;
+        HackathonStartedHandler.HackathonStarted += OnHackathonStarted;
         return Task.CompletedTask;
     }
 
+    private bool _isProcessing = false;
 
     private async void OnHackathonStarted(
         HackathonAnnouncementMessage hackathonStartedEvent)
     {
-        var cancellationToken = CancellationToken.None;
-
-        var employeeType = employeeSettings.EmployeeType;
-        var employeeId = employeeSettings.EmployeeId;
-
-        if (string.IsNullOrEmpty(employeeType))
+        if (_isProcessing)
         {
-            logger.LogWarning("Invalid environment variables. ");
+            logger.LogInformation("Ignoring duplicate HackathonStarted event.");
             return;
         }
+        
+        _isProcessing = true;
 
-        var employee = await GetEmployeeAsync(employeeId, employeeType);
-        if (employee == null)
+        try
         {
-            logger.LogWarning("Employee not found.");
-            return;
-        }
+            logger.LogInformation("HackathonStarted!");
+            var cancellationToken = CancellationToken.None;
+            var employeeType = employeeSettings.EmployeeType;
+            var employeeId = employeeSettings.EmployeeId;
 
-        var employeePreferences = await GetTeamLeadsAsync();
-        var preferences =
-            preferencesService.CreatePreferences(employee, employeePreferences);
-        await SubmitPreferencesAsync(employee, preferences, employeeType,
-            hackathonStartedEvent.HackathonId,
-            cancellationToken);
+            if (string.IsNullOrEmpty(employeeType))
+            {
+                logger.LogWarning("Invalid environment variables.");
+                return;
+            }
+
+            var employee = await GetEmployeeAsync(employeeId, employeeType);
+            if (employee == null)
+            {
+                logger.LogWarning("Employee not found.");
+                return;
+            }
+
+            var employeePreferences = await GetTeamLeadsAsync();
+            var preferences =
+                preferencesService.CreatePreferences(employee,
+                    employeePreferences);
+            await SubmitPreferencesAsync(employee, preferences, employeeType,
+                hackathonStartedEvent.HackathonId);
+        }
+        finally
+        {        
+            _isProcessing = false; 
+        }
     }
-
 
     private async Task<Employee?> GetEmployeeAsync(int employeeId,
         string employeeType)
@@ -68,9 +85,7 @@ public class StartupService(
     }
 
     private async Task SubmitPreferencesAsync(Employee employee,
-        Wishlist preferences, string employeeType,
-        int hackathonId,
-        CancellationToken cancellationToken)
+        Wishlist preferences, string employeeType, int hackathonId)
     {
         var preferencesMessage = new PreferencesMessage
         {
@@ -79,12 +94,17 @@ public class StartupService(
             EmployeeType = employeeType,
             HackathonId = hackathonId
         };
+
         var preferencesJson = JsonSerializer.Serialize(preferencesMessage);
         logger.LogInformation($"Received message: {preferencesJson}");
+
         try
         {
-            logger.LogInformation("Publishing preferences to RabbitMQ.");
-            rabbitMqService.Publish("preferences.submit", preferencesMessage);
+            using var scope = serviceProvider.CreateScope();
+            var publishEndpoint =
+                scope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
+            logger.LogInformation("Publishing preferences.");
+            await publishEndpoint.Publish(preferencesMessage);
         }
         catch (Exception ex)
         {
@@ -94,7 +114,7 @@ public class StartupService(
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        HackathonStartConsumer.HackathonStarted -= OnHackathonStarted;
+        HackathonStartedHandler.HackathonStarted -= OnHackathonStarted;
         return Task.CompletedTask;
     }
 }

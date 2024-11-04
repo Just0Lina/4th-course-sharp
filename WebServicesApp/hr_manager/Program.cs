@@ -1,3 +1,4 @@
+using MassTransit;
 using Nsu.HackathonProblem.HrManager.Services;
 using Nsu.HackathonProblem.SharedData.Services;
 
@@ -7,8 +8,27 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<ITeamBuildingStrategy, TeamBuildingStrategy>();
 builder.Services.AddSingleton<IDistributionService, DistributionService>();
-builder.Services.AddSingleton<IRabbitMqService, RabbitMqService>();
-builder.Services.AddHostedService<PreferencesConsumer>();
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<PreferencesMessageConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("rabbitmq", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+        
+        cfg.ReceiveEndpoint("hr_manager", e =>
+        {
+            e.Bind("preferencesExchange");
+            e.ConfigureConsumer<PreferencesMessageConsumer>(context);
+        });
+        
+    });
+});
 
 var app = builder.Build();
 

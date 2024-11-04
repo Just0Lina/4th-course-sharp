@@ -39,7 +39,7 @@ namespace Nsu.HackathonProblem.HrManager.Services
             };
         }
 
-        private bool AllRequestsReceived()
+        public bool AllRequestsReceived()
         {
             return _juniorPreferences.Count >= 5 &&
                    _teamLeadPreferences.Count >= 5;
@@ -109,6 +109,7 @@ namespace Nsu.HackathonProblem.HrManager.Services
             _teamLeadPreferences.Clear();
             _juniorPreferences.Clear();
             
+
         }
 
         private async Task<IActionResult> SendFinalDistribution(int hackathonId)

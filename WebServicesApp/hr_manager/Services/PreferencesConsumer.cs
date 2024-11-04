@@ -1,29 +1,23 @@
 using System.Text.Json;
+using MassTransit;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Nsu.HackathonProblem.SharedData.Models;
 using Nsu.HackathonProblem.SharedData.Services;
 
 namespace Nsu.HackathonProblem.HrManager.Services;
 
-public class PreferencesConsumer(
-    ILogger<PreferencesConsumer> logger,
+public class PreferencesMessageConsumer(
     IDistributionService distributionService,
-    IRabbitMqService rabbitMqService
-)
-    : BackgroundService
+    ILogger<PreferencesMessageConsumer> logger)
+    : IConsumer<PreferencesMessage>
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task Consume(ConsumeContext<PreferencesMessage> context)
     {
-        var queueName = $"preferences.submit.{Guid.NewGuid()}";
+        var message = context.Message;
+        if (distributionService.AllRequestsReceived()) return;
 
-        rabbitMqService.Consume<PreferencesMessage>(queueName,
-            "preferences.submit",
-            HandlePreferencesAsync, stoppingToken);
-    }
-
-    private async Task HandlePreferencesAsync(PreferencesMessage message)
-    {
         distributionService.SetHackathonId(message.HackathonId);
-
         if (message.EmployeeType == "junior")
         {
             distributionService.SaveJuniorPreferences(

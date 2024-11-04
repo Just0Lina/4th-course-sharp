@@ -4,8 +4,6 @@ namespace Nsu.HackathonProblem.HrDirector.Repository;
 
 public interface IHackathonRepository
 {
-    Task SavePreferenceAsync(Role role, int hackathonId,
-        Wishlist preference);
 
     Task SaveEmployeesAsync(List<Team> teams);
     Task SaveHackathonIdAsync(int hackathonId);
@@ -17,4 +15,8 @@ public interface IHackathonRepository
     Task<IEnumerable<Wishlist>> GetJuniorWishlistsAsync(int hackathonId);
     Task<int> GetPreferencesCountAsync(int hackathonId, Role junior);
     Task ClearPreferencesAndTeamsForHackathonIdAsync(int requestHackathonId);
+    Task SaveJuniorPreferences(int hackathonId, Wishlist messagePreferences);
+
+    Task SaveTeamLeadPreferences(int hackathonId, Wishlist messagePreferences);
+    bool AllRequestsReceived();
 }

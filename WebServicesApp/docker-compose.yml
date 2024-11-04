@@ -60,7 +60,7 @@ services:
       - ./shared-data-dir:/app/shared-data
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__HackathonDbContext="Host=db;Port=5432;Database=hackathon_db;Username=postgres;Password=postgres"
+      - ConnectionStrings__HackathonDbContext="Host=db;Port=5432;Database=hackathon_db;Username=postgres;Password=postgres;Include Error Detail=true"
     depends_on:
       rabbitmq:
         condition: service_healthy

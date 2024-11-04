@@ -12,7 +12,7 @@ public class HackathonDbContext(DbContextOptions<HackathonDbContext> options)
         if (!optionsBuilder.IsConfigured)
         {
             optionsBuilder.UseNpgsql(
-                "Host=localhost;Database=hackathon_db;Username=your_user;Password=your_password");
+                "Host=localhost;Database=hackathon_db;Username=your_user;Password=your_password;Include Error Detail=true");
         }
     }
 

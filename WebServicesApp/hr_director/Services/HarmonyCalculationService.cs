@@ -6,43 +6,62 @@ namespace Nsu.HackathonProblem.HrDirector.Services;
 public class HarmonyCalculationService : IHarmonyCalculationService
 {
     private readonly IHackathonRepository _hackathonRepository;
-    private readonly TaskCompletionSource<bool> _preferencesReceivedTcs;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<HarmonyCalculationService> _logger;
+
     private int _hackathonId;
+    private bool _isSubscribed = false;
 
 
     public HarmonyCalculationService(IHackathonRepository hackathonRepository,
-        IServiceScopeFactory contextFactory)
+        IServiceScopeFactory contextFactory,
+        ILogger<HarmonyCalculationService> logger)
     {
         _hackathonRepository = hackathonRepository;
-        _preferencesReceivedTcs = new TaskCompletionSource<bool>();
         _scopeFactory = contextFactory;
+        _logger = logger;
 
 
-        PreferencesConsumer.PreferencesReceivedTcs += GetPreferencesConsumer;
+        SubscribeToPreferencesReceived();
     }
-
+    private void SubscribeToPreferencesReceived()
+    {
+        if (!_isSubscribed)
+        {
+            PreferencesConsumer.PreferencesReceivedTcs += GetPreferencesConsumer;
+            _isSubscribed = true; 
+        }
+    }
+    private bool _isProcessing = false;
 
     private async void GetPreferencesConsumer(PreferencesMessage message)
     {
-        _hackathonId = message.HackathonId;
-        if (message.EmployeeType == "junior")
+        if (_isProcessing)
         {
-            await _hackathonRepository.SavePreferenceAsync(
-                Role.Junior, _hackathonId, message.Preferences);
-        }
-        else if (message.EmployeeType == "teamlead")
-        {
-            await _hackathonRepository.SavePreferenceAsync(
-                Role.TeamLead, _hackathonId, message.Preferences);
+            _logger.LogInformation(
+                "Ignoring duplicate HackathonStarted event.");
+            return;
         }
 
-        bool allPreferencesReceived =
-            await CheckPreferencesCountAsync(_hackathonId);
-
-        if (allPreferencesReceived)
+        _isProcessing = true;
+        if (_hackathonRepository.AllRequestsReceived()) return;
+        try
         {
-            _preferencesReceivedTcs.TrySetResult(true);
+            _hackathonId = message.HackathonId;
+            if (message.EmployeeType == "junior")
+            {
+                await _hackathonRepository.SaveJuniorPreferences(_hackathonId,
+                    message.Preferences);
+            }
+            else if (message.EmployeeType == "teamlead")
+            {
+                await _hackathonRepository.SaveTeamLeadPreferences(_hackathonId,
+                    message.Preferences);
+            }
+        }
+        finally
+        {
+            _isProcessing = false;
         }
     }
 
@@ -59,24 +78,25 @@ public class HarmonyCalculationService : IHarmonyCalculationService
         var teamLeadCount =
             await repository.GetPreferencesCountAsync(hackathonId,
                 Role.TeamLead);
+        _logger.LogInformation($"junior count: {juniorCount}, team lead count: {teamLeadCount}, hackathonId: {hackathonId}");
+
         return juniorCount >= 25 && teamLeadCount >= 25;
     }
 
 
     public async Task<double> CalculateHarmonyAsync(List<Team> teams,
-        CancellationToken cancellationToken)
+        int hackathonId)
     {
-        while (!await CheckPreferencesCountAsync(_hackathonId))
+
+        while (!await CheckPreferencesCountAsync(hackathonId))
         {
         }
-
-        Console.WriteLine($"Calculating Harmony");
-
+        
         var juniorWishlistsAsync =
-            await _hackathonRepository.GetJuniorWishlistsAsync(_hackathonId);
+            await _hackathonRepository.GetJuniorWishlistsAsync(hackathonId);
 
         var teamLeadsWishlistsAsync = await _hackathonRepository
-            .GetTeamLeadWishlistsAsync(_hackathonId);
+            .GetTeamLeadWishlistsAsync(hackathonId);
 
         return CalculateHarmony(juniorWishlistsAsync.ToList(),
             teamLeadsWishlistsAsync.ToList(),
@@ -90,7 +110,6 @@ public class HarmonyCalculationService : IHarmonyCalculationService
         var n = teams.Count * 2;
 
         double sumOfReciprocals = 0;
-        Console.WriteLine($"Calculating harmy for {n} teams");
         foreach (var team in teams)
         {
             var teamLeadPreference =

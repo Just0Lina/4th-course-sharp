@@ -1,9 +1,12 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Nsu.HackathonProblem.HrDirector;
 using Nsu.HackathonProblem.HrDirector.Database;
 using Nsu.HackathonProblem.HrDirector.Repository;
 using Nsu.HackathonProblem.HrDirector.Services;
+using Nsu.HackathonProblem.SharedData.Models;
 using Nsu.HackathonProblem.SharedData.Services;
+using Nsu.HackathonProblem.TeamLead.Service;
 using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,23 +26,33 @@ builder.Services.AddDbContextFactory<HackathonDbContext>(options =>
 
 builder.Services.AddScoped<IHarmonyCalculationService, HarmonyCalculationService>();
 builder.Services.AddScoped<IHackathonRepository, HackathonRepository>();
-builder.Services.AddSingleton<IRabbitMqService, RabbitMqService>();
+builder.Services.AddSingleton<IHackathonStartedHandler, HackathonStartedHandler>();
 
-builder.Services.AddScoped<RabbitMqService>();
-builder.Services.AddHttpContextAccessor(); 
-builder.Services.AddHostedService<PreferencesConsumer>();
 
-builder.Services.AddSingleton<IConnection>(provider =>
+builder.Services.AddMassTransit(x =>
 {
-    var factory = new ConnectionFactory() { HostName = "rabbitmq" };
-    return factory.CreateConnection();
+    x.AddConsumer<PreferencesConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("rabbitmq", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+        
+        
+        cfg.ReceiveEndpoint("hr_director", e =>
+        {
+            e.Bind("preferencesExchange");
+            e.ConfigureConsumer<PreferencesConsumer>(context);
+        });
+        
+    });
 });
 
-builder.Services.AddSingleton<IModel>(provider =>
-{
-    var connection = provider.GetRequiredService<IConnection>();
-    return connection.CreateModel();
-});
+
+
 
 var app = builder.Build();
 
@@ -47,6 +60,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
     app.ApplyMigrations();
+    
 }
 
 app.UseRouting();
@@ -54,3 +68,4 @@ app.UseRouting();
 app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
 
 app.Run();
+
