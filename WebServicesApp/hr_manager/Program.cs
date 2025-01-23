@@ -27,6 +27,11 @@ builder.Services.AddMassTransit(x =>
             e.ConfigureConsumer<PreferencesMessageConsumer>(context);
         });
         
+        cfg.UseRetry(retry =>
+        {
+            retry.Interval(3, TimeSpan.FromSeconds(10)); 
+        });
+        
     });
 });
 

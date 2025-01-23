@@ -20,8 +20,6 @@ public class HrDirectorController(
     public async Task<IActionResult> CalculateHarmony(
         TeamsAndPreferencesEntity teamsAndPreferencesEntity)
     {
-        logger.LogInformation($"id: {teamsAndPreferencesEntity.HackathonId}");
-
         var teams = teamsAndPreferencesEntity.Teams;
         var harmonyIndex =
             await harmonyService.CalculateHarmonyAsync(teams, teamsAndPreferencesEntity.HackathonId);
@@ -43,6 +41,7 @@ public class HrDirectorController(
     public async Task<IActionResult> AnnounceHackathon(
         [FromBody] HackathonAnnouncementRequest request)
     {
+        PreferencesConsumer.ClearProcessedPreferences();
         var message = new HackathonAnnouncementMessage
         {
             HackathonId = request.HackathonId,
@@ -72,7 +71,7 @@ public class HrDirectorController(
                     ctx.SetRoutingKey(
                         "hackathonExchange"); 
                 });
-            logger.LogInformation($"Average hackathons harmony: {hackathonRepository.CalculateAverageHarmonyAsync()}");
+            logger.LogInformation($"Average hackathons harmony: {await hackathonRepository.CalculateAverageHarmonyAsync()}");
             return Ok("Hackathon announcement sent successfully.");
         }
         catch (Exception ex)

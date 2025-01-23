@@ -38,8 +38,7 @@ services:
       dockerfile: hr_manager/Dockerfile
     ports:
       - "${HR_MANAGER_PORT:-5011}:8080"
-    volumes:
-      - ./shared-data-dir:/app/shared-data
+    restart: always
     deploy:
       replicas: 1
     depends_on:
@@ -56,8 +55,7 @@ services:
       dockerfile: hr_director/Dockerfile
     ports:
       - "${HR_DIRECTOR_PORT:-5012}:8080"
-    volumes:
-      - ./shared-data-dir:/app/shared-data
+    restart: always
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__HackathonDbContext="Host=db;Port=5432;Database=hackathon_db;Username=postgres;Password=postgres;Include Error Detail=true"

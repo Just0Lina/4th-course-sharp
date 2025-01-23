@@ -46,6 +46,10 @@ builder.Services.AddMassTransit(x =>
             e.Bind("preferencesExchange");
             e.ConfigureConsumer<PreferencesConsumer>(context);
         });
+        cfg.UseRetry(retry =>
+        {
+            retry.Interval(3, TimeSpan.FromSeconds(10)); 
+        });
         
     });
 });

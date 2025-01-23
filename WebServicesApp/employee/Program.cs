@@ -39,7 +39,10 @@ builder.Services.AddMassTransit(x =>
 
             e.ConfigureConsumers(context);
             
-            e.UseMessageRetry(r => r.Interval(5, TimeSpan.FromSeconds(10)));
+        });
+        cfg.UseRetry(retry =>
+        {
+            retry.Interval(3, TimeSpan.FromSeconds(10)); 
         });
     });
 });

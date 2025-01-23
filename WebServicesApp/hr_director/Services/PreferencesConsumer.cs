@@ -13,6 +13,11 @@ public class PreferencesConsumer(
     private static readonly ConcurrentDictionary<string, bool> ProcessedPreferences =
         new ConcurrentDictionary<string, bool>();
 
+
+    public static void ClearProcessedPreferences()
+    {
+        ProcessedPreferences.Clear();
+    }
     public async Task Consume(ConsumeContext<PreferencesMessage> context)
     {
         var message = context.Message;
